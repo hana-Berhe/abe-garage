@@ -3,10 +3,9 @@ import { useParams } from "react-router-dom";
 import { format } from "date-fns";
 import trackingApi from "../tracking.api";
 import { Brand } from "../../../layouts/Header";
-import Totals from "../../../shared/components/Totals";
 import Icon from "../../../shared/components/Icon";
 import { StatusBadge, PaidBadge } from "../../../shared/components/StatusBadge";
-import { money, telHref } from "../../../shared/lib/format";
+import { telHref } from "../../../shared/lib/format";
 
 const JOB_STATE = { 0: "Not started", 1: "Working on it", 2: "Done" };
 
@@ -14,25 +13,25 @@ const when = (v) => (v ? format(new Date(v), "EEE d MMM, HH:mm") : "");
 const day = (v) => (v ? format(new Date(v), "EEEE d MMMM") : "");
 
 function headline(order) {
-  if (order.status === 1) return "Your price is ready";
+  if (order.status === 1) return "We have checked your car";
   if (order.status === 2) return "Your car is in the queue";
   if (order.status === 3) return "Your car is being repaired";
   if (order.status === 4) return order.paid ? "All done. Thank you!" : "Your car is ready to collect";
-  return "You said no to this price";
+  return "You said no to this work";
 }
 
 // Each step is "done", "now" or "todo".
 function timeline(order) {
   const jobsDone = order.lines.filter((l) => l.line_status === 2).length;
   const how = order.answer_method ? `, ${order.answer_method}` : "";
-  const steps = [{ state: "done", title: "Price ready", note: when(order.created_at) }];
+  const steps = [{ state: "done", title: "Car checked", note: when(order.created_at) }];
   if (order.status === 5) {
     steps.push({ state: "done", title: `You said no${how}`, note: when(order.answered_at) });
     steps.push({ state: "todo", title: "No work was done", note: "Call us if you change your mind" });
     return steps;
   }
   steps.push(order.status === 1
-    ? { state: "now", title: "Waiting for your yes", note: "We will call you to go over the price" }
+    ? { state: "now", title: "Waiting for your yes", note: "We will call you to go over the work and the price" }
     : { state: "done", title: `You said yes${how}`, note: when(order.answered_at) });
   steps.push({
     state: order.status === 4 ? "done" : order.status === 3 ? "now" : "todo",
@@ -60,6 +59,7 @@ function StatusShell({ phone, children }) {
 }
 
 // FR-TRK-02, FR-TRK-03, FR-TRK-08: the customer's private status page. No login.
+// Progress only: prices are shown to signed-in staff only, and the desk tells the customer by phone or in person.
 export default function OrderStatus() {
   const { hash } = useParams();
   const [order, setOrder] = useState(null);
@@ -120,14 +120,11 @@ export default function OrderStatus() {
               <tr key={i}>
                 <td>{l.name}</td>
                 <td className="text-end"><span className={`job-state job-state--${l.line_status}`}>{l.line_status === 2 && <Icon name="check" size={16} stroke={3} />}{JOB_STATE[l.line_status]}</span></td>
-                <td className="text-end money">{money(l.line_price)}</td>
               </tr>
             ))}
           </tbody>
         </table>
-        <Totals subtotal={order.subtotal} vatRate={order.vat_rate} vatAmount={order.vat_amount} total={order.total}
-          totalLabel={order.status === 1 || order.status === 5 ? "Total" : "Total you agreed"} />
-        {order.status !== 5 && <p className="text-muted small mt-3 mb-0">You pay in cash when you collect the car.</p>}
+        {order.status !== 5 && <p className="text-muted small mt-3 mb-0">The desk tells you the price before any work starts. You pay in cash when you collect the car.</p>}
       </section>
 
       {order.notes_for_customer && (

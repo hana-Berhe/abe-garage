@@ -29,14 +29,14 @@ export default function About() {
           </div>
           <div className="stat-tiles">
             <div className="stat-tile stat-tile--dark"><span className="d">Cash</span><span>One payment when you collect the car</span></div>
-            <div className="stat-tile"><span className="d">{services ? services.length : "–"}</span><span>Services at fixed, published prices</span></div>
-            <div className="stat-tile"><span className="d">{Number(g.vat_rate ?? 15)}%</span><span>VAT, shown on every bill</span></div>
+            <div className="stat-tile"><span className="d">{services ? services.length : "–"}</span><span>Services we offer</span></div>
+            <div className="stat-tile"><span className="d">1</span><span>Named technician for each job</span></div>
             <div className="stat-tile stat-tile--yellow"><span className="d">{opens}</span><span>When the doors open</span></div>
           </div>
         </div>
       </section>
 
-      <CallBand title="See our prices first" link={{ to: "/services", label: "Services and prices" }} />
+      <CallBand title="Ask us what your car needs" link={{ to: "/services", label: "Our services" }} />
     </>
   );
 }

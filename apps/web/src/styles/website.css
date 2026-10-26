@@ -106,6 +106,7 @@
 .service-row__body p { margin: 0; color: var(--ag-muted); font-size: 16px; }
 .service-row__price { text-align: right; margin-left: auto; }
 .service-row__price .d { font-size: 64px; }
+.service-row__price .service-row__time { font-size: 44px; }
 .service-row__price small { display: block; font: 500 12px/1.4 var(--ag-font-mono); color: var(--ag-muted); text-transform: uppercase; }
 
 /* Why choose us */

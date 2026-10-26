@@ -9,7 +9,7 @@ import heroArt from "../../../assets/hero-y.svg";
 
 const REASONS = [
   ["Experienced mechanics", "Every job has one named technician who owns it from start to finish."],
-  ["Fair, fixed prices", "Our prices are on this website. The price you agree is the price you pay."],
+  ["Fair, clear prices", "You get the price before we start. The price you agree is the price you pay."],
   ["We ask before extra work", "Found something else? We stop and call you with a new price first."],
   ["Follow your car live", "A private link by email shows each job as it starts and finishes."],
 ];
@@ -87,7 +87,7 @@ export default function Home() {
             <p>Real mechanics, fair prices and no surprises. You get a written price before we start, and a private link to follow your car while we work.</p>
             <div className="d-flex flex-wrap gap-3">
               {g.phone && <a href={telHref(g.phone)} className="site-btn site-btn--yellow"><Icon name="phone" size={20} />Call for a price</a>}
-              <Link to="/services" className="site-btn site-btn--ghost">See our prices</Link>
+              <Link to="/services" className="site-btn site-btn--ghost">See our services</Link>
             </div>
           </div>
           <div className="site-hero__art">
@@ -106,12 +106,12 @@ export default function Home() {
         <div className="site-wrap">
           <div className="sec-head">
             <div><span className="tag">Services</span><h2 className="d h-section">What we fix</h2></div>
-            <p>Fixed prices, before 15% VAT. VAT is added to the subtotal on your bill, and nothing changes after you say yes.</p>
+            <p>Call the desk for a price. We tell you before any work starts, and nothing changes after you say yes.</p>
           </div>
           <div className="tiles">
             {(services || []).slice(0, 4).map((s, i) => <ServiceCard key={s.service_id} service={s} index={i} />)}
           </div>
-          {services && services.length === 0 && <p className="muted">Our price list is coming soon.</p>}
+          {services && services.length === 0 && <p className="muted">Our service list is coming soon.</p>}
         </div>
       </section>
 
@@ -138,7 +138,7 @@ export default function Home() {
           <div className="stack" style={{ flexGrow: 1.2 }}>
             <span className="mono fw-bold small" style={{ letterSpacing: "0.12em" }}>NO APP · NO ACCOUNT</span>
             <h2 className="d h-section">Your car, live on your phone</h2>
-            <p className="m-0 fs-5" style={{ maxWidth: 520 }}>When we write your price, we email you a private link. Open it any time to see what is done, what is next and the total you agreed.</p>
+            <p className="m-0 fs-5" style={{ maxWidth: 520 }}>When we write your price, we email you a private link. Open it any time to see what is done and what is next.</p>
             <div style={{ maxWidth: 480 }}><CheckMyCar /></div>
           </div>
           <div aria-hidden="true">
@@ -150,7 +150,6 @@ export default function Home() {
                   <div className="meter"><span style={{ width: "62%" }} /></div>
                   <div className="phone-mock__row"><span>Oil change</span><strong className="job-state--2">Done</strong></div>
                   <div className="phone-mock__row"><span>Brakes</span><strong className="job-state--1">Working on it</strong></div>
-                  <div className="phone-mock__row border-top border-2 border-dark pt-2"><span className="muted small">Total with VAT</span><strong>$264.50</strong></div>
                 </div>
               </div>
             </div>

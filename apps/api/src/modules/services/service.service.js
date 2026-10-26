@@ -25,9 +25,10 @@ async function listAll() {
 }
 
 // FR-SRV-04, NFR-05: only safe fields of active services.
+// The public website lists services without prices: prices are for signed-in staff only.
 async function listPublic() {
   const [rows] = await pool.query(
-    "SELECT service_id, name, description, price, labor_hours FROM services WHERE active = 1 ORDER BY name"
+    "SELECT service_id, name, description, labor_hours FROM services WHERE active = 1 ORDER BY name"
   );
   return rows;
 }

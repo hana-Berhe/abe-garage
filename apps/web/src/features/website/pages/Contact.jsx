@@ -52,7 +52,7 @@ export default function Contact() {
             <div className="stack" style={{ flex: "1 1 360px", minWidth: 0 }}>
               <span className="tag">Already dropped off your car?</span>
               <h2 className="d h-section">Check your email</h2>
-              <p className="muted m-0 fs-5">We send a private link to every customer when the price is ready. Open it to see each job and when your car is ready to collect. Lost the email? Call the desk and we will send it again.</p>
+              <p className="muted m-0 fs-5">We send a private link to every customer when we have checked your car. Open it to see each job and when your car is ready to collect. Lost the email? Call the desk and we will send it again.</p>
               <Link to="/#live-status" className="site-btn site-btn--ink align-self-start">Check my car</Link>
               <div className="info-list">
                 <div><span>Payment</span><strong>Cash at pickup, in one payment</strong></div>

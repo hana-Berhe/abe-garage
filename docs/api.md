@@ -24,7 +24,7 @@ Errors: 400 wrong input (with `data.field`), 401 not logged in or expired, 403 w
 | POST | `/api/service` | Add a service | A |
 | GET | `/api/services` | All services, including inactive | T, M, A |
 | PUT | `/api/service/:id` | Edit or deactivate a service | A |
-| GET | `/api/public/services` | Active services and prices | Public |
+| GET | `/api/public/services` | Active services, without prices (prices are for signed-in staff only) | Public |
 | POST | `/api/order` | Create an order (Awaiting approval) and email the status link | M, A |
 | GET | `/api/orders` | List (`?status=&paid=&search=`) | T, M, A |
 | GET / PUT | `/api/order/:id` | Order detail / edit notes, date, and jobs while Awaiting approval | T (view), M, A |
@@ -37,6 +37,6 @@ Errors: 400 wrong input (with `data.field`), 401 not logged in or expired, 403 w
 | PUT | `/api/order/:id/payment` | Mark paid in cash (once) | M, A |
 | POST | `/api/order/:id/resend-email` | Send the status link or "car is ready" email again | M, A |
 | GET | `/api/dashboard` | Counters and cash totals | M, A |
-| GET | `/api/public/order/:hash` | Customer status page data (safe fields only) | Public |
+| GET | `/api/public/order/:hash` | Customer status page data (safe fields only, no prices) | Public |
 
 `POST /api/order/:id/line` is the one endpoint added beyond the PRD list, for FR-EST-04 (extra work).

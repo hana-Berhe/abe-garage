@@ -12,8 +12,8 @@ async function get() {
 
 // Safe fields for the public website (NFR-05).
 async function getPublic() {
-  const { name, address, phone, email, vat_rate, opening_time, closing_time } = await get();
-  return { name, address, phone, email, vat_rate, opening_time, closing_time };
+  const { name, address, phone, email, opening_time, closing_time } = await get();
+  return { name, address, phone, email, opening_time, closing_time };
 }
 
 // The new VAT rate applies to new orders only; each order keeps its own copy (AD-6).
