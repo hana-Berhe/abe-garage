@@ -1,25 +1,17 @@
 import { useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import { useGarage, usePublicServices } from "../useGarage";
+import { reviewsToShow } from "../reviews";
 import ServiceCard from "../components/ServiceCard";
-import CallBand from "../components/CallBand";
 import Icon from "../../../shared/components/Icon";
-import { telHref } from "../../../shared/lib/format";
-import heroArt from "../../../assets/hero-lift.svg";
-import garageArt from "../../../assets/garage-front.svg";
+import { hour12, telHref } from "../../../shared/lib/format";
+import heroArt from "../../../assets/hero-y.svg";
 
-const PROMISES = [
-  ["file", "Written estimate", "Every job priced before work."],
-  ["shield", "Your approval first", "Extra work? We ask again."],
-  ["mail", "Status by email", "Follow your car, no login."],
-  ["cash", "Pay cash at pickup", "Printed bill, VAT shown."],
-];
-
-const STEPS = [
-  ["Bring your car", "We take your details, look at the car and tell you what it needs."],
-  ["Get the price and say yes", "Each job, the subtotal, 15% VAT and the total. Nothing starts until you agree, in person or by phone."],
-  ["Follow the repair", "A private link by email shows each job as it starts and finishes."],
-  ["Pay and drive away", "Pick up your car with a printed bill. Payment is cash at the desk."],
+const REASONS = [
+  ["Experienced mechanics", "Every job has one named technician who owns it from start to finish."],
+  ["Fair, fixed prices", "Our prices are on this website. The price you agree is the price you pay."],
+  ["We ask before extra work", "Found something else? We stop and call you with a new price first."],
+  ["Follow your car live", "A private link by email shows each job as it starts and finishes."],
 ];
 
 // FR-WEB-03: a customer pastes the code (or the whole link) from their email.
@@ -38,132 +30,159 @@ function CheckMyCar() {
       <label htmlFor="check-code" className="form-label fw-bold">Car already with us? Check how it is going</label>
       <div className="d-flex gap-2">
         <input id="check-code" className={`form-control${error ? " is-invalid" : ""}`} placeholder="Code or link from your email" value={code} onChange={(e) => { setCode(e.target.value); setError(null); }} />
-        <button type="submit" className="btn btn-dark-navy">Check</button>
+        <button type="submit" className="btn btn-ink">Check</button>
       </div>
       {error && <div className="text-danger small mt-1">{error}</div>}
     </form>
   );
 }
 
+function Reviews() {
+  const { reviews, rating, samples } = reviewsToShow();
+  if (!reviews.length) return null;
+  return (
+    <section id="reviews" className="sec sec--alt">
+      <div className="site-wrap">
+        <div className="sec-head">
+          <div><span className="tag">Reviews</span><h2 className="d h-section">What customers say</h2></div>
+          {rating && (
+            <div className="review-score">
+              <span className="d">{rating.rating}</span>
+              <span><span className="stars d-block" aria-label="5 stars">★★★★★</span><span className="muted small">from {rating.count} reviews</span></span>
+            </div>
+          )}
+        </div>
+        <div className="reviews">
+          {reviews.map((r, i) => (
+            <figure key={i} className={`review${i === 1 ? " review--dark" : ""}`}>
+              <div className="d-flex justify-content-between align-items-center">
+                <span className="stars" aria-label="5 stars">★★★★★</span>
+                {samples && <span className="sample-label">Sample · replace</span>}
+              </div>
+              <blockquote>“{r.text}”</blockquote>
+              <figcaption>
+                <span className="review__avatar" aria-hidden="true">{(r.name.replace(/\W/g, "")[0] || "?").toUpperCase()}</span>
+                <span><strong className="d-block">{r.name}</strong><small>{r.job}</small></span>
+              </figcaption>
+            </figure>
+          ))}
+        </div>
+      </div>
+    </section>
+  );
+}
+
 export default function Home() {
   const g = useGarage();
   const { services } = usePublicServices();
+  const mapsUrl = g.address ? `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(g.address)}` : "/contact";
 
   return (
     <>
       <section className="site-hero">
         <div className="site-wrap site-hero__inner">
           <div className="site-hero__text">
-            <span className="eyebrow">Car repair you can follow</span>
-            <h1>Know the price <span className="accent">before</span> we touch your car.</h1>
-            <p>A written estimate first. Work starts only when you say yes. A private link to follow the repair, and a clear bill with 15% VAT shown.</p>
-            <div className="d-flex flex-wrap gap-2">
-              <Link to="/services" className="btn btn-brand btn-lg-site">See services and prices <Icon name="arrow" size={18} /></Link>
-              {g.phone && <a href={telHref(g.phone)} className="btn btn-ghost-light btn-lg-site"><Icon name="phone" size={18} />Call {g.phone}</a>}
-            </div>
-            <div className="ticks">
-              <span><Icon name="check" size={18} stroke={3} />No work without your yes</span>
-              <span><Icon name="check" size={18} stroke={3} />Prices on the website</span>
+            <span className="tag">Local · Independent · Honest prices</span>
+            <h1 className="d">Your <span className="text-yellow">trusted</span><br />auto repair<br />partner</h1>
+            <p>Real mechanics, fair prices and no surprises. You get a written price before we start, and a private link to follow your car while we work.</p>
+            <div className="d-flex flex-wrap gap-3">
+              {g.phone && <a href={telHref(g.phone)} className="site-btn site-btn--yellow"><Icon name="phone" size={20} />Call for a price</a>}
+              <Link to="/services" className="site-btn site-btn--ghost">See our prices</Link>
             </div>
           </div>
           <div className="site-hero__art">
-            <img src={heroArt} alt="A car on a lift in the workshop" />
+            <div className="art-frame"><img src={heroArt} alt="A red hatchback raised on a lift in the Abe Garage workshop" /></div>
+            <div className="hero-stamp" aria-hidden="true">Price<br />first,<br />always</div>
             <div className="hero-toast" aria-hidden="true">
               <span className="hero-toast__icon"><Icon name="check" size={22} stroke={3} /></span>
-              <span><strong className="d-block">Oil change done</strong><small className="text-muted">Shown on the customer's status page</small></span>
+              <span><small>JOB 102 · 09:40</small><strong>Oil change done</strong></span>
             </div>
           </div>
         </div>
+        <div className="hazard" />
       </section>
 
-      <section className="promise-strip">
-        <div className="site-wrap promise-strip__grid">
-          {PROMISES.map(([icon, title, text]) => (
-            <div className="promise" key={title}>
-              <span className="icon-tile icon-tile--sm"><Icon name={icon} size={22} /></span>
-              <div><strong>{title}</strong><span>{text}</span></div>
-            </div>
-          ))}
-        </div>
-      </section>
-
-      <section className="site-section">
+      <section className="sec sec--paper">
         <div className="site-wrap">
-          <div className="d-flex flex-wrap justify-content-between align-items-end gap-3 mb-4">
-            <div>
-              <span className="eyebrow">Services and prices</span>
-              <h2 className="h-section">What we do, and what it costs</h2>
-            </div>
-            <Link to="/services" className="fw-semibold">All services and prices <Icon name="arrow" size={16} /></Link>
+          <div className="sec-head">
+            <div><span className="tag">Services</span><h2 className="d h-section">What we fix</h2></div>
+            <p>Fixed prices, before 15% VAT. VAT is added to the subtotal on your bill, and nothing changes after you say yes.</p>
           </div>
-          <div className="card-grid">
+          <div className="tiles">
             {(services || []).slice(0, 4).map((s, i) => <ServiceCard key={s.service_id} service={s} index={i} />)}
           </div>
-          {services && services.length === 0 && <p className="lead-muted">Our price list is coming soon.</p>}
-          <p className="text-muted small mt-3 mb-0">Prices are before VAT. 15% VAT is added to the subtotal on your bill.</p>
+          {services && services.length === 0 && <p className="muted">Our price list is coming soon.</p>}
         </div>
       </section>
 
-      <section className="site-section site-section--alt">
-        <div className="site-wrap split">
-          <div>
-            <span className="eyebrow">How it works</span>
-            <h2 className="h-section">Four steps, no surprises</h2>
-            <p className="lead-muted mt-3">From the moment you hand over the keys to the moment you drive away, you know what is happening and what it costs.</p>
-            <div className="mt-4" style={{ maxWidth: 480 }}><CheckMyCar /></div>
+      <section className="sec sec--dark">
+        <div className="site-wrap d-flex flex-wrap" style={{ gap: 64 }}>
+          <div className="stack" style={{ flex: "1 1 380px", minWidth: 0 }}>
+            <span className="tag">Why Abe Garage</span>
+            <h2 className="d h-section">Why drivers<br />choose <span className="text-yellow">us</span></h2>
+            <p className="lead-dark">We are a small, independent workshop. No sales targets, no upselling, no fine print. Just the job you agreed to, done right.</p>
+            <div className="why-rule"><small>Our one rule</small><strong>No work starts until you know the price and say yes.</strong></div>
           </div>
-          <ol className="steps">
-            {STEPS.map(([title, text], i) => (
-              <li key={title}>
-                <span className="steps__num">{i + 1}</span>
-                <div><strong>{title}</strong><span>{text}</span></div>
-              </li>
+          <div className="why-grid" style={{ flex: "1.4 1 520px", minWidth: 0 }}>
+            {REASONS.map(([title, text], i) => (
+              <div key={title}><span className="d">0{i + 1}</span><h3>{title}</h3><p>{text}</p></div>
             ))}
-          </ol>
+          </div>
         </div>
       </section>
 
-      <section className="site-section site-section--dark">
+      <Reviews />
+
+      <section id="live-status" className="sec sec--yellow">
         <div className="site-wrap split">
-          <div className="phone-mock" aria-hidden="true">
-            <div className="phone-mock__bar"><Icon name="wrench" size={16} />ABE GARAGE</div>
-            <div className="p-3">
-              <div className="d-flex justify-content-between align-items-center">
-                <div><strong className="d-block">Order 102</strong><small className="text-muted">Honda Fit · DEMO-101</small></div>
-                <span className="ag-badge ag-badge--3">In progress</span>
+          <div className="stack" style={{ flexGrow: 1.2 }}>
+            <span className="mono fw-bold small" style={{ letterSpacing: "0.12em" }}>NO APP · NO ACCOUNT</span>
+            <h2 className="d h-section">Your car, live on your phone</h2>
+            <p className="m-0 fs-5" style={{ maxWidth: 520 }}>When we write your price, we email you a private link. Open it any time to see what is done, what is next and the total you agreed.</p>
+            <div style={{ maxWidth: 480 }}><CheckMyCar /></div>
+          </div>
+          <div aria-hidden="true">
+            <div className="phone-mock">
+              <div className="phone-mock__screen">
+                <div className="phone-mock__bar"><span className="mark"><Icon name="wrench" size={16} /></span><span className="d fs-4">Abe Garage</span></div>
+                <div className="phone-mock__body">
+                  <div><span className="mono muted" style={{ fontSize: 11 }}>ORDER 102 · DEMO-101</span><div className="d" style={{ fontSize: 30 }}>Being repaired</div></div>
+                  <div className="meter"><span style={{ width: "62%" }} /></div>
+                  <div className="phone-mock__row"><span>Oil change</span><strong className="job-state--2">Done</strong></div>
+                  <div className="phone-mock__row"><span>Brakes</span><strong className="job-state--1">Working on it</strong></div>
+                  <div className="phone-mock__row border-top border-2 border-dark pt-2"><span className="muted small">Total with VAT</span><strong>$264.50</strong></div>
+                </div>
               </div>
-              <div className="progress-bar-thin my-3"><span style={{ width: "50%" }} /></div>
-              <div className="d-flex justify-content-between py-2 border-bottom"><span>Oil change</span><span className="ag-badge ag-badge--4">Done</span></div>
-              <div className="d-flex justify-content-between py-2 border-bottom"><span>Brakes</span><span className="ag-badge ag-badge--3">Started</span></div>
-              <div className="d-flex justify-content-between pt-3"><span className="text-muted">Total with VAT</span><strong>$264.50</strong></div>
             </div>
           </div>
-          <div>
-            <span className="eyebrow">Your private status page</span>
-            <h2 className="h-section">Follow your car from your phone</h2>
-            <p className="lead-muted mt-3">When we write your estimate, we email you a private link. Open it any time to see which jobs are done, what is next and the agreed total. No app, no account, no password.</p>
-            <ul className="check-list mt-3">
-              <li><Icon name="check" size={18} stroke={3} />See each job start and finish</li>
-              <li><Icon name="check" size={18} stroke={3} />Know when the car is ready to collect</li>
-              <li><Icon name="check" size={18} stroke={3} />The price you agreed, with VAT</li>
-            </ul>
-          </div>
         </div>
       </section>
 
-      <section className="site-section">
-        <div className="site-wrap split">
-          <div>
-            <span className="eyebrow">About Abe Garage</span>
-            <h2 className="h-section">A local garage that writes everything down</h2>
-            <p className="lead-muted mt-3">Every job is priced and written down before we start, and the price you agree is the price on your bill.</p>
-            <Link to="/about" className="btn btn-dark-navy btn-lg-site mt-2">More about us</Link>
+      <section className="sec sec--paper">
+        <div className="site-wrap d-flex flex-wrap align-items-stretch" style={{ gap: 48 }}>
+          <div className="stack" style={{ flex: "1 1 400px", minWidth: 0 }}>
+            <span className="tag">Contact and location</span>
+            <h2 className="d h-section">Come see us</h2>
+            {g.phone && <a href={telHref(g.phone)} className="d big-phone">{g.phone}</a>}
+            <div className="info-list">
+              <div><span>Address</span><strong>{g.address || "–"}</strong></div>
+              <div><span>Hours</span><strong>{g.opening_time ? `${hour12(g.opening_time)}${g.closing_time ? ` to ${hour12(g.closing_time)}` : ""}` : "–"}</strong></div>
+              <div><span>Email</span><strong>{g.email || "–"}</strong></div>
+              <div><span>Payment</span><strong>Cash at pickup</strong></div>
+            </div>
+            <div className="d-flex flex-wrap gap-2">
+              {g.phone && <a href={telHref(g.phone)} className="site-btn site-btn--ink">Call us</a>}
+              <a href={mapsUrl} target="_blank" rel="noreferrer" className="site-btn site-btn--outline">Get directions</a>
+            </div>
           </div>
-          <div className="art-card"><img src={garageArt} alt="The front of Abe Garage" /></div>
+          <div className="map-box" style={{ flex: "1.3 1 460px", minWidth: 0 }}>
+            <div className="map-box__pin">
+              <span>{g.name || "Abe Garage"}</span>
+              <Icon name="pin" size={36} stroke={2.5} />
+            </div>
+          </div>
         </div>
       </section>
-
-      <CallBand title="Warning light on? Strange noise?" text="Call the desk and we will book you in." />
     </>
   );
 }

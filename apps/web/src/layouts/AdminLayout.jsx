@@ -13,7 +13,7 @@ export default function AdminLayout() {
       <div className="d-flex flex-column min-w-0">
         <header className="admin-top no-print">
           <span>{format(new Date(), "EEEE, d MMMM yyyy")}</span>
-          <span className="d-flex align-items-center gap-3">
+          <span className="d-flex d-md-none align-items-center gap-3">
             <span><span className="who">{employee.name}</span> · {ROLE_NAMES[employee.role]}</span>
             <button type="button" className="btn btn-sm btn-outline-secondary" onClick={logout}>Log out</button>
           </span>

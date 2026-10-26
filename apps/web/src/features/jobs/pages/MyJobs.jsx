@@ -54,8 +54,8 @@ export default function MyJobs() {
       <h1 className="page-title mb-1">My jobs</h1>
       <p className="muted">{format(new Date(), "EEEE d MMM")} · {employee.name}</p>
       <div className="btn-group w-100 mb-3" role="tablist">
-        <button type="button" role="tab" aria-selected={tab === "todo"} className={`btn ${tab === "todo" ? "btn-dark-navy" : "btn-outline-secondary"}`} onClick={() => setTab("todo")}>To do ({todo.length})</button>
-        <button type="button" role="tab" aria-selected={tab === "done"} className={`btn ${tab === "done" ? "btn-dark-navy" : "btn-outline-secondary"}`} onClick={() => setTab("done")}>Done today ({done.length})</button>
+        <button type="button" role="tab" aria-selected={tab === "todo"} className={`btn ${tab === "todo" ? "btn-ink" : "btn-outline-secondary"}`} onClick={() => setTab("todo")}>To do ({todo.length})</button>
+        <button type="button" role="tab" aria-selected={tab === "done"} className={`btn ${tab === "done" ? "btn-ink" : "btn-outline-secondary"}`} onClick={() => setTab("done")}>Done today ({done.length})</button>
       </div>
       <Alert>{error}</Alert>
       {jobs && shown.length === 0 && <p className="muted">{tab === "todo" ? "No jobs waiting for you." : "Nothing finished yet today."}</p>}
@@ -81,7 +81,7 @@ export default function MyJobs() {
             {j.internal_notes && <p className="small mb-2"><strong>Desk note:</strong> {j.internal_notes}</p>}
             {j.technician_note && <p className="small mb-2"><strong>My note:</strong> {j.technician_note}</p>}
             {j.line_status === 0 && (
-              <button type="button" className="btn btn-dark-navy btn-xl w-100" disabled={busy === j.line_id || waiting} onClick={() => change(j, 1)}>Start job</button>
+              <button type="button" className="btn btn-ink btn-xl w-100" disabled={busy === j.line_id || waiting} onClick={() => change(j, 1)}>Start job</button>
             )}
             {j.line_status === 1 && (
               <button type="button" className="btn btn-xl w-100 text-white" style={{ background: "var(--ag-s4-fg)" }} disabled={busy === j.line_id} onClick={() => change(j, 2)}>✓ Mark job done</button>

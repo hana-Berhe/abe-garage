@@ -20,41 +20,45 @@ export default function Dashboard() {
 
   if (isTech) return <Navigate to="/admin/my-jobs" replace />;
 
+  // [badge text, badge colour, number, line under it, link]
   const counters = data
     ? [
-        ["Awaiting approval", data.awaiting_approval, "/admin/orders?status=1"],
-        ["Approved, not started", data.approved, "/admin/orders?status=2"],
-        ["In progress", data.in_progress, "/admin/orders?status=3"],
-        ["Completed today", data.completed_today, "/admin/orders?status=4"],
-        ["Unpaid", data.unpaid, "/admin/orders?paid=0"],
+        ["Awaiting approval", "1", data.awaiting_approval, "Call the customer", "/admin/orders?status=1"],
+        ["Approved", "2", data.approved, "Not started yet", "/admin/orders?status=2"],
+        ["In progress", "3", data.in_progress, "In the workshop now", "/admin/orders?status=3"],
+        ["Completed today", "4", data.completed_today, "Since opening today", "/admin/orders?status=4"],
+        ["Unpaid", "unpaid", data.unpaid, `${money(data.unpaid_total)} to collect`, "/admin/orders?paid=0"],
       ]
     : [];
+  const hour = new Date().getHours();
+  const greeting = hour < 12 ? "Good morning" : hour < 18 ? "Good afternoon" : "Good evening";
 
   return (
     <>
       <div className="d-flex justify-content-between align-items-center flex-wrap gap-2 mb-3">
-        <h1 className="page-title mb-0">Dashboard</h1>
+        <h1 className="page-title mb-0">{greeting}, {employee.name.split(" ")[0]}</h1>
         <Link to="/admin/order/new" className="btn btn-brand">+ New order</Link>
       </div>
       <Alert>{error}</Alert>
       {data && (
         <>
           <div className="row g-3 mb-4">
-            {counters.map(([label, value, to]) => (
+            {counters.map(([label, tone, value, note, to]) => (
               <div className="col-6 col-md-4 col-xl" key={label}>
                 <Link to={to} className="counter d-block text-decoration-none text-reset">
-                  <div className="counter-value">{value}</div>
-                  <div className="counter-label">{label}</div>
+                  <span className={`ag-badge ag-badge--${tone}`}>{label}</span>
+                  <div className="counter-value mt-2">{value}</div>
+                  <div className="counter-note">{note}</div>
                 </Link>
               </div>
             ))}
           </div>
           <div className="row g-3 mb-4">
-            {[["Cash today", data.money_today], ["Cash this week", data.money_week], ["Cash this month", data.money_month], ["Waiting to be paid", data.unpaid_total]].map(([label, value]) => (
+            {[["Cash today", data.money_today], ["Cash this week", data.money_week], ["Cash this month", data.money_month], ["Waiting to be paid", data.unpaid_total]].map(([label, value], i) => (
               <div className="col-6 col-lg-3" key={label}>
-                <div className="counter">
-                  <div className="counter-value money">{money(value)}</div>
+                <div className={`counter${i === 1 ? " counter--dark" : ""}`}>
                   <div className="counter-label">{label}</div>
+                  <div className="counter-value money">{money(value)}</div>
                 </div>
               </div>
             ))}

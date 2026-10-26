@@ -94,7 +94,7 @@ export default function NewOrder() {
       <ol className="d-flex gap-2 flex-wrap list-unstyled mb-4" aria-label="Steps">
         {STEPS.map((s, i) => (
           <li key={s}>
-            <button type="button" className={`btn btn-sm ${i === step ? "btn-dark-navy" : "btn-outline-secondary"}`} disabled={i > step}
+            <button type="button" className={`btn btn-sm ${i === step ? "btn-ink" : "btn-outline-secondary"}`} disabled={i > step}
               onClick={() => setStep(i)} aria-current={i === step ? "step" : undefined}>
               {i + 1}. {s}
             </button>
@@ -184,7 +184,7 @@ export default function NewOrder() {
           )}
           <div className="d-flex gap-2 mt-3">
             {step > 0 && <button type="button" className="btn btn-outline-secondary" onClick={() => setStep(step - 1)}>Back</button>}
-            {step < 3 && <button type="button" className="btn btn-dark-navy" disabled={!canNext} onClick={() => setStep(step + 1)}>Next</button>}
+            {step < 3 && <button type="button" className="btn btn-ink" disabled={!canNext} onClick={() => setStep(step + 1)}>Next</button>}
             {step === 3 && <button type="button" className="btn btn-brand" disabled={busy} onClick={submit}>{busy ? "Saving…" : "Create order and email the link"}</button>}
           </div>
         </div>
