@@ -1,11 +1,9 @@
-import { Link } from "react-router-dom";
+import LostPage from "../../website/components/LostPage";
 
 export default function Unauthorized() {
   return (
-    <section className="container py-5 page-narrow">
-      <h1 className="page-title">Not allowed</h1>
-      <p>Your account can't open this page.</p>
-      <Link to="/admin" className="btn btn-brand">Back to the admin area</Link>
-    </section>
+    <LostPage title="You don't have access to this page"
+      text="Your account can't open this page. If you think you need it, ask the garage admin."
+      action={{ to: "/admin", label: "Back to the staff area" }} />
   );
 }

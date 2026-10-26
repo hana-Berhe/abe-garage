@@ -28,7 +28,21 @@ async function getOrderStatus(hash) {
      WHERE l.order_id = ? ORDER BY l.line_id`,
     [order.order_id]
   );
-  return { ...order, lines };
+  // The latest yes or no from the customer, for the timeline. Only the time and how (phone or in person).
+  const [answers] = await pool.query(
+    `SELECT action, details, created_at FROM order_history
+     WHERE order_id = ? AND action IN ('approved', 'declined')
+     ORDER BY created_at DESC, history_id DESC LIMIT 1`,
+    [order.order_id]
+  );
+  const answer = answers[0];
+  const method = answer && /^(by phone|in person)/.exec(answer.details || "");
+  return {
+    ...order,
+    answered_at: answer ? answer.created_at : null,
+    answer_method: method ? method[1] : null,
+    lines,
+  };
 }
 
 module.exports = { getOrderStatus };

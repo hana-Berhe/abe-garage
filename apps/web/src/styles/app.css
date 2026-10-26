@@ -1,5 +1,6 @@
 /* App styles built on the design tokens in tokens.css (design-hifi v1). */
 @import "./tokens.css";
+@import "./website.css";
 
 body { background: var(--ag-bg); color: var(--ag-ink); }
 a { color: var(--ag-link); }
@@ -44,21 +45,8 @@ h1, h2, h3, .ag-display { font-family: var(--ag-font-display); font-weight: 700;
 .page-title { font-size: var(--ag-h-page); color: var(--ag-ink); margin-bottom: var(--ag-space-4); line-height: 1; }
 .page-narrow { max-width: 760px; }
 
-/* Public site */
-.topbar { background: var(--ag-navy-900); color: var(--ag-navy-text); font-size: 0.85rem; padding: 6px 0; }
-.site-header { background: #fff; border-bottom: 1px solid var(--ag-line); }
 .brand { font-family: var(--ag-font-display); font-weight: 700; font-size: 1.6rem; color: var(--ag-navy-900); text-decoration: none; text-transform: uppercase; display: inline-flex; align-items: center; gap: 10px; }
 .brand-mark { width: 36px; height: 36px; border-radius: 8px; background: var(--ag-red-600); color: #fff; display: inline-grid; place-items: center; font-size: 1.1rem; }
-.brand-light { color: #fff; }
-.main-nav a:not(.btn) { color: var(--ag-ink); text-decoration: none; font-weight: 600; font-size: 0.9rem; }
-.main-nav a.active:not(.btn) { color: var(--ag-red-600); }
-.site-footer { background: var(--ag-navy-900); color: var(--ag-navy-text); }
-.site-footer a { color: #fff; }
-.hero { background: var(--ag-navy-900); color: #fff; }
-.hero h1 { font-size: clamp(2.4rem, 6vw, var(--ag-h-display)); max-width: 760px; line-height: 1; }
-.eyebrow { color: var(--ag-red-on-dark); font-weight: 700; text-transform: uppercase; letter-spacing: 0.08em; }
-.feature { background: var(--ag-surface); border: 1px solid var(--ag-line); border-radius: var(--ag-radius-card); border-top: 4px solid var(--ag-red-600); padding: 1.25rem; height: 100%; }
-.feature h3 { font-size: 1.3rem; }
 
 /* Staff shell: 248px navy sidebar, top bar, content */
 .admin-shell { display: grid; grid-template-columns: var(--ag-sidebar-w) minmax(0, 1fr); min-height: 100vh; }
@@ -90,7 +78,6 @@ h1, h2, h3, .ag-display { font-family: var(--ag-font-display); font-weight: 700;
   .admin-top { padding: 8px var(--ag-space-4); }
   .admin-content { padding: var(--ag-space-4); }
   .ag-card { padding: var(--ag-space-4); }
-  .topbar span:last-child { display: none; }
   .page-title { font-size: 32px; }
   .is-tech .admin-menu { display: none; }
   .is-tech .admin-content { padding-bottom: 88px; }
@@ -104,7 +91,7 @@ h1, h2, h3, .ag-display { font-family: var(--ag-font-display); font-weight: 700;
 @media print {
   @page { size: A4; margin: 14mm; }
   body { background: #fff; }
-  .no-print, .site-header, .admin-menu, .admin-top, .bottom-nav, .site-footer { display: none !important; }
+  .no-print, .site-header, .site-topbar, .admin-menu, .admin-top, .bottom-nav, .site-footer { display: none !important; }
   .admin-shell { display: block; }
   .admin-content { padding: 0; }
   .print-only { display: block; }

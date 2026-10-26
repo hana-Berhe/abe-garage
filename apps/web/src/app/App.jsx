@@ -41,11 +41,11 @@ export default function App() {
         <Route path="/about" element={<About />} />
         <Route path="/services" element={<Services />} />
         <Route path="/contact" element={<Contact />} />
-        <Route path="/order-status/:hash" element={<OrderStatus />} />
         <Route path="/login" element={<Login />} />
-        <Route path="/unauthorized" element={<Unauthorized />} />
-        <Route path="*" element={<NotFound />} />
       </Route>
+      <Route path="/order-status/:hash" element={<OrderStatus />} />
+      <Route path="/unauthorized" element={<Unauthorized />} />
+      <Route path="*" element={<NotFound />} />
 
       <Route path="/admin" element={<PrivateAuthRoute roles={STAFF}><AdminLayout /></PrivateAuthRoute>}>
         <Route index element={<Dashboard />} />
@@ -66,9 +66,8 @@ export default function App() {
         <Route path="employee/:id/edit" element={<PrivateAuthRoute roles={[A]}><EmployeeForm /></PrivateAuthRoute>} />
         <Route path="settings" element={<PrivateAuthRoute roles={[A]}><Settings /></PrivateAuthRoute>} />
         <Route path="profile" element={<Profile />} />
-        <Route path="*" element={<NotFound />} />
+        <Route path="*" element={<NotFound inAdmin />} />
       </Route>
-
     </Routes>
   );
 }
