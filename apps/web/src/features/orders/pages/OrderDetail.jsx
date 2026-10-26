@@ -279,7 +279,7 @@ export default function OrderDetail() {
           <div className="ag-card">
             <h2 className="h5">Customer and car</h2>
             <div className="d-flex gap-3 align-items-center mb-3">
-              <span className="rounded-circle d-inline-grid text-white fw-bold" style={{ width: 44, height: 44, placeItems: "center", background: "var(--ag-navy-900)" }}>{initials(order.first_name, order.last_name)}</span>
+              <span className="rounded-circle d-inline-grid text-white fw-bold" style={{ width: 44, height: 44, placeItems: "center", background: "var(--ag-ink)" }}>{initials(order.first_name, order.last_name)}</span>
               <div>
                 <Link to={`/admin/customer/${order.customer_id}`}>{order.first_name} {order.last_name}</Link>
                 <div className="muted small">{order.phone}</div>
@@ -344,8 +344,8 @@ export default function OrderDetail() {
             <Modal.Body>
               {!awaiting && <Alert kind="warning">Adding a job sends the order back to Awaiting approval. Jobs already started can still be finished.</Alert>}
               <div className="btn-group mb-3" role="group">
-                <button type="button" className={`btn ${adding.kind === "service" ? "btn-dark-navy" : "btn-outline-secondary"}`} onClick={() => setAdding({ ...adding, kind: "service" })}>Service</button>
-                <button type="button" className={`btn ${adding.kind === "extra" ? "btn-dark-navy" : "btn-outline-secondary"}`} onClick={() => setAdding({ ...adding, kind: "extra" })}>Extra item</button>
+                <button type="button" className={`btn ${adding.kind === "service" ? "btn-ink" : "btn-outline-secondary"}`} onClick={() => setAdding({ ...adding, kind: "service" })}>Service</button>
+                <button type="button" className={`btn ${adding.kind === "extra" ? "btn-ink" : "btn-outline-secondary"}`} onClick={() => setAdding({ ...adding, kind: "extra" })}>Extra item</button>
               </div>
               {adding.kind === "service" ? (
                 <Field label="Service" name="service_id" as="select" value={adding.service_id} onChange={(e) => setAdding({ ...adding, service_id: e.target.value })}
