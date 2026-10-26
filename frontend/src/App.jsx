@@ -22,6 +22,7 @@ import CustomerList from "./pages/admin/customers/CustomerList";
 import CustomerForm from "./pages/admin/customers/CustomerForm";
 import CustomerProfile from "./pages/admin/customers/CustomerProfile";
 import VehiclePage from "./pages/admin/customers/VehiclePage";
+import ServiceList from "./pages/admin/services/ServiceList";
 
 const { TECHNICIAN: T, ADMIN: A } = ROLES;
 
@@ -49,7 +50,7 @@ export default function App() {
         <Route path="customer/:id/edit" element={<PrivateAuthRoute roles={OFFICE}><CustomerForm /></PrivateAuthRoute>} />
         <Route path="customer/:id" element={<CustomerProfile />} />
         <Route path="vehicle/:id" element={<VehiclePage />} />
-        <Route path="services" element={<PrivateAuthRoute roles={[A]}><ComingSoon title="Services" owner="Member 3" /></PrivateAuthRoute>} />
+        <Route path="services" element={<PrivateAuthRoute roles={[A]}><ServiceList /></PrivateAuthRoute>} />
         <Route path="employees" element={<PrivateAuthRoute roles={[A]}><EmployeeList /></PrivateAuthRoute>} />
         <Route path="employee/new" element={<PrivateAuthRoute roles={[A]}><EmployeeForm /></PrivateAuthRoute>} />
         <Route path="employee/:id/edit" element={<PrivateAuthRoute roles={[A]}><EmployeeForm /></PrivateAuthRoute>} />
