@@ -1,18 +1,17 @@
 import { Link } from "react-router-dom";
+import gearArt from "../../../assets/gear.svg";
 
-// The black band at the top of About, Services and Contact, ending in a hazard stripe.
-export default function PageHero({ crumb, title, children, side }) {
+// The dark band at the top of Services, About and Contact.
+export default function PageHero({ crumb, eyebrow, title, children }) {
   return (
-    <section className="site-hero site-hero--page">
-      <div className="site-wrap site-hero__inner">
-        <div className="site-hero__text">
-          <nav aria-label="Breadcrumb" className="site-crumbs"><Link to="/">Home</Link> / {crumb}</nav>
-          <h1 className="d">{title}</h1>
-          {children}
-        </div>
-        {side && <div className="site-hero__art">{side}</div>}
+    <section className="ph">
+      <div className="wrap">
+        <nav aria-label="Breadcrumb" className="crumb"><Link to="/">Home</Link><span>/</span><span style={{ color: "#FFF" }}>{crumb}</span></nav>
+        <div className="eyebrow">{eyebrow}</div>
+        <h1>{title}</h1>
+        {children}
       </div>
-      <div className="hazard" />
+      <div className="bg" aria-hidden="true"><img src={gearArt} alt="" /></div>
     </section>
   );
 }

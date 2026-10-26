@@ -53,7 +53,7 @@ apps/web/src/
 │   ├── components/            Alert, Field, Pagination, SearchBox, StatusBadge, Totals, ConfirmDialog
 │   ├── constants/roles.js     1 Technician, 2 Manager, 3 Admin
 │   └── lib/                   format (money, dates), money preview
-└── styles/                    design tokens (yellow and black design, v3) and app CSS
+└── styles/                    design tokens (charcoal and orange design, v4); website.css is only used inside <div class="ag"> (public pages, login, status)
 ```
 
 Pages never call `fetch` and never hold business rules. Money shown before saving is a preview; the server's numbers are the ones stored.

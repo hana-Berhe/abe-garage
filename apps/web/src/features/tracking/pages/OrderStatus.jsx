@@ -2,15 +2,17 @@ import { useEffect, useState } from "react";
 import { useParams } from "react-router-dom";
 import { format } from "date-fns";
 import trackingApi from "../tracking.api";
-import { Brand } from "../../../layouts/Header";
+import Header, { hoursText } from "../../../layouts/Header";
+import Footer from "../../../layouts/Footer";
+import { useGarage } from "../../website/useGarage";
 import Icon from "../../../shared/components/Icon";
-import { StatusBadge, PaidBadge } from "../../../shared/components/StatusBadge";
 import { telHref } from "../../../shared/lib/format";
 
 const JOB_STATE = { 0: "Not started", 1: "Working on it", 2: "Done" };
 
 const when = (v) => (v ? format(new Date(v), "EEE d MMM, HH:mm") : "");
 const day = (v) => (v ? format(new Date(v), "EEEE d MMMM") : "");
+const headTail = (text) => { const i = text.indexOf(" is "); return i > 0 ? [text.slice(0, i + 4), text.slice(i + 4)] : [text, ""]; };
 
 function headline(order) {
   if (order.status === 1) return "We have checked your car";
@@ -44,17 +46,21 @@ function timeline(order) {
   return steps;
 }
 
-function StatusShell({ phone, children }) {
+function StatusShell({ children }) {
   return (
-    <div className="status-shell">
-      <header className="status-bar">
-        <div className="status-bar__inner">
-          <Brand small tagline={false} />
-          {phone && <a href={telHref(phone)} className="status-call"><Icon name="phone" size={18} />Call us</a>}
-        </div>
-      </header>
-      <main className="status-main">{children}</main>
+    <div className="ag">
+      <Header />
+      <main>{children}</main>
+      <Footer />
     </div>
+  );
+}
+
+function Message({ title, text }) {
+  return (
+    <StatusShell>
+      <section className="ph st-empty"><div className="wrap"><div className="eyebrow">Your car</div><h1>{title}</h1><p>{text}</p></div></section>
+    </StatusShell>
   );
 }
 
@@ -64,86 +70,72 @@ export default function OrderStatus() {
   const { hash } = useParams();
   const [order, setOrder] = useState(null);
   const [error, setError] = useState(null);
+  const g = useGarage();
 
   useEffect(() => { trackingApi.orderStatus(hash).then(setOrder).catch((e) => setError(e)); }, [hash]);
 
   if (error) {
-    return (
-      <StatusShell>
-        <h1 className="d">Order not found</h1>
-        <p>{error.httpStatus === 404 ? error.message : "We couldn't load your order right now. Please try again later."}</p>
-      </StatusShell>
-    );
+    return <Message title="Order not found"
+      text={error.httpStatus === 404 ? error.message : "We couldn't load your order right now. Please try again later."} />;
   }
-  if (!order) return <StatusShell><p className="text-muted">Loading…</p></StatusShell>;
+  if (!order) return <Message title="Loading…" text="" />;
+
+  const jobsDone = order.lines.filter((l) => l.line_status === 2).length;
+  const [first, rest] = headTail(headline(order));
 
   return (
-    <StatusShell phone={order.garage_phone}>
-      <p className="text-muted mb-0">Hello {order.first_name},</p>
-      <h1 className="d">{headline(order)}</h1>
-
-      <section className="ag-card mb-3">
-        <div className="d-flex justify-content-between align-items-start gap-2 flex-wrap">
-          <div className="status-car">
-            <span className="status-car__icon"><Icon name="car" size={28} /></span>
-            <div>
-              <strong className="d-block fs-5">{order.year} {order.make} {order.model}</strong>
-              <span className="text-muted"><span className="mono">{order.plate}</span> · Order {order.order_id}</span>
-            </div>
-          </div>
-          <div className="d-flex gap-2">
-            <StatusBadge status={order.status} />
-            {order.status === 4 && <PaidBadge paid={order.paid} />}
-          </div>
+    <StatusShell>
+      <section className="ph status">
+        <div className="wrap">
+          <div className="eyebrow">Order {order.order_id}</div>
+          <h1>Hi {order.first_name}, {first.charAt(0).toLowerCase() + first.slice(1)}{rest && <><br /><em>{rest}</em></>}</h1>
+          <div className="car">{order.year} {order.make} {order.model}{order.color ? ` · ${order.color}` : ""} <span className="plate">{order.plate}</span></div>
         </div>
-        {order.estimated_ready_date && order.status < 4 ? (
-          <div className="status-ready"><span>Expected ready</span><strong>{day(order.estimated_ready_date)}</strong></div>
-        ) : <div className="mb-4" />}
-        <ol className="timeline">
-          {timeline(order).map((s) => (
-            <li key={s.title} className={s.state}>
-              <span className="timeline__dot">
-                {s.state === "done" && <Icon name="check" size={16} stroke={3} />}
-                {s.state === "now" && <Icon name="wrench" size={15} />}
-              </span>
-              <div><strong>{s.title}</strong><small>{s.note}</small></div>
-            </li>
-          ))}
-        </ol>
       </section>
 
-      <section className="ag-card mb-3">
-        <h2 className="h4">The work on your car</h2>
-        <table className="table align-middle mb-2">
-          <tbody>
-            {order.lines.map((l, i) => (
-              <tr key={i}>
-                <td>{l.name}</td>
-                <td className="text-end"><span className={`job-state job-state--${l.line_status}`}>{l.line_status === 2 && <Icon name="check" size={16} stroke={3} />}{JOB_STATE[l.line_status]}</span></td>
-              </tr>
+      <div className="wrap st-grid">
+        <section className="form">
+          <h3>Progress</h3>
+          <ol className="prog">
+            {timeline(order).map((s) => (
+              <li key={s.title} className={s.state}>
+                <span className="dot">{s.state === "done" && <Icon name="check" size={16} stroke={3} />}</span>
+                <div><b>{s.title}</b><small>{s.note}</small></div>
+              </li>
             ))}
-          </tbody>
-        </table>
-        {order.status !== 5 && <p className="text-muted small mt-3 mb-0">The desk tells you the price before any work starts. You pay in cash when you collect the car.</p>}
-      </section>
+          </ol>
+          {order.estimated_ready_date && order.status < 4 && (
+            <div className="soft"><Icon name="clock" size={18} /><span>Expected ready: <b>{day(order.estimated_ready_date)}</b></span></div>
+          )}
+        </section>
 
-      {order.notes_for_customer && (
-        <div className="note-box mb-3">
-          <Icon name="message" size={22} />
-          <div><strong className="d-block">Message from the garage</strong>{order.notes_for_customer}</div>
-        </div>
-      )}
+        <section className="form">
+          <h3 style={{ marginBottom: 4 }}>The work on your car</h3>
+          <p className="sub" style={{ marginBottom: 6 }}>{jobsDone} of {order.lines.length} jobs done</p>
+          {order.lines.map((l, i) => (
+            <div key={i} className="job"><span>{l.name}</span><span className={`pill s${l.line_status}`}>{JOB_STATE[l.line_status]}</span></div>
+          ))}
+          {order.notes_for_customer && (
+            <div className="soft"><Icon name="message" size={18} /><span><b>Message from the garage:</b> {order.notes_for_customer}</span></div>
+          )}
+          {order.status !== 5 && (
+            <div className="soft"><Icon name="info" size={18} /><span>We tell you the price by phone before any work starts. You pay in cash at the front desk when you pick up the car, and get a printed invoice.</span></div>
+          )}
+        </section>
 
-      <div className="d-flex flex-wrap gap-2">
-        {order.garage_phone && (
-          <a href={telHref(order.garage_phone)} className="btn btn-brand btn-xl flex-fill d-inline-flex align-items-center justify-content-center gap-2"><Icon name="phone" size={18} />Call {order.garage_phone}</a>
-        )}
-        {order.garage_address && (
-          <a href={`https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(order.garage_address)}`} target="_blank" rel="noreferrer"
-            className="btn btn-outline-secondary btn-xl flex-fill d-inline-flex align-items-center justify-content-center">How to find us</a>
-        )}
+        <section className="form">
+          <h3>Picking up</h3>
+          <div className="lines">
+            {order.garage_address && (
+              <div><Icon name="pin" size={18} /><a href={`https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(order.garage_address)}`} target="_blank" rel="noreferrer">{order.garage_address}</a></div>
+            )}
+            {hoursText(g) && <div><Icon name="clock" size={18} />{hoursText(g)}</div>}
+            {order.garage_phone && <div><Icon name="phone" size={18} /><a href={telHref(order.garage_phone)} style={{ fontWeight: 700 }}>{order.garage_phone}</a></div>}
+          </div>
+          {order.garage_phone && <a href={telHref(order.garage_phone)} className="btn primary" style={{ width: "100%", marginTop: 20 }}><Icon name="phone" size={16} /> Call the garage</a>}
+          <p className="note"><Icon name="info" size={16} /><span>This page is private to you. Please do not share the link.</span></p>
+        </section>
       </div>
-      <p className="text-center text-muted small mt-3">This page is private to you. Please do not share the link.</p>
     </StatusShell>
   );
 }

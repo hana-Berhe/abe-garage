@@ -1,8 +1,6 @@
 import { Link } from "react-router-dom";
 import LostPage from "../components/LostPage";
 
-const TEXT = "The page you are looking for is not here. If you followed a link to your car's status, check the email we sent or call the desk.";
-
 // `inAdmin` keeps the staff menu around the message instead of the full dark page.
 export default function NotFound({ inAdmin = false }) {
   if (inAdmin) {
@@ -14,5 +12,8 @@ export default function NotFound({ inAdmin = false }) {
       </div>
     );
   }
-  return <LostPage code="404" title="This page took a wrong turn" text={TEXT} />;
+  return (
+    <LostPage code="404" eyebrow="Error 404" title={<>This page took<br /><em>a wrong turn.</em></>}
+      text="The page you are looking for has moved or does not exist. If you followed a link to your car's status, check the email we sent or call the desk." />
+  );
 }

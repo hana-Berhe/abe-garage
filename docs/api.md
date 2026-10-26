@@ -36,7 +36,10 @@ Errors: 400 wrong input (with `data.field`), 401 not logged in or expired, 403 w
 | GET | `/api/order/:id/invoice` | Invoice data (completed orders whose total matches the last approval) | M, A |
 | PUT | `/api/order/:id/payment` | Mark paid in cash (once) | M, A |
 | POST | `/api/order/:id/resend-email` | Send the status link or "car is ready" email again | M, A |
-| GET | `/api/dashboard` | Counters and cash totals | M, A |
+| GET | `/api/dashboard` | Counters, cash totals and the 5 newest call-back requests | M, A |
+| POST | `/api/public/callback` | Website "Request a call back" form. At most 5 a phone number per hour | Public |
+| GET | `/api/callbacks?status=new\|called\|all` | Call-back requests, newest first, with `new_count` | M, A |
+| PUT | `/api/callback/:id/called` | Mark a request as called (409 if someone already did) | M, A |
 | GET | `/api/public/order/:hash` | Customer status page data (safe fields only, no prices) | Public |
 
 `POST /api/order/:id/line` is the one endpoint added beyond the PRD list, for FR-EST-04 (extra work).

@@ -9,9 +9,9 @@ export const REVIEWS = [];
 export const RATING = null;
 
 const SAMPLES = [
-  { name: "[Customer name]", job: "Brakes · Honda Fit", text: "They called me with the price before touching anything, and the bill matched to the cent." },
-  { name: "[Customer name]", job: "Diagnostics · Toyota Hilux", text: "I followed the whole repair from my phone at work. Picked the car up the same afternoon." },
-  { name: "[Customer name]", job: "Oil change · Hyundai i10", text: "Honest local garage. They told me what could wait and what could not." },
+  { name: "[Customer name]", job: "Honda Fit", text: "Squeaky brakes fixed the same day. They called me first and there were no surprises when I picked up the car." },
+  { name: "[Customer name]", job: "Toyota Hilux", text: "The engine light kept coming on. They found a small air leak, showed me the old part and explained everything clearly." },
+  { name: "[Customer name]", job: "Hyundai i10", text: "I dropped the car off at 8 on my way to work and got a message when it was ready. Easy and honest." },
 ];
 
 export function reviewsToShow() {

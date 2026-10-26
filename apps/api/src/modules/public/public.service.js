@@ -11,7 +11,7 @@ async function getOrderStatus(hash) {
   const [rows] = await pool.query(
     `SELECT o.order_id, o.status, o.paid, o.paid_at, o.estimated_ready_date, o.completed_at, o.created_at,
        o.notes_for_customer,
-       c.first_name, v.year, v.make, v.model, v.plate,
+       c.first_name, v.year, v.make, v.model, v.color, v.plate,
        g.name AS garage_name, g.phone AS garage_phone, g.address AS garage_address
      FROM orders o
      JOIN customers c ON c.customer_id = o.customer_id
