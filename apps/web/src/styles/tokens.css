@@ -1,15 +1,15 @@
-/* Abe Garage design tokens v1 (matches the high-fidelity page designs) */
-@import url("https://fonts.googleapis.com/css2?family=Barlow+Condensed:wght@600;700&family=Inter:wght@400;500;600;700&display=swap");
+/* Abe Garage design tokens v2 (yellow and black workshop look) */
+@import url("https://fonts.googleapis.com/css2?family=Archivo:wght@400;500;600;700;800&family=Big+Shoulders+Display:wght@800;900&family=JetBrains+Mono:wght@500;700&display=swap");
 :root{
   /* brand */
-  --ag-navy-900:#0B1A3A; --ag-navy-800:#15264A; --ag-navy-700:#1B2B52; --ag-navy-line:#1E2F57; --ag-navy-text:#C5CDE0; --ag-navy-muted:#A9B4CC;
-  --ag-red-600:#D3261D; --ag-red-700:#B01E16; --ag-red-on-dark:#FF8A80;
-  --ag-link:#1C3F94;
-  /* neutrals */
-  --ag-ink:#0E1726; --ag-muted:#5A6478; --ag-border-strong:#C9CFDA; --ag-line:#DFE3EA; --ag-line-soft:#EDF0F4;
-  --ag-bg:#F4F5F8; --ag-surface:#FFFFFF; --ag-surface-alt:#F8F9FB;
+  --ag-yellow:#FFC400; --ag-yellow-hover:#FFD447; --ag-yellow-dark:#E0AC00;
+  --ag-ink:#141414; --ag-asphalt:#1C1C1C; --ag-steel:#2A2A2A; --ag-steel-line:#333333; --ag-ink-deep:#0C0C0C;
+  --ag-on-dark:#D9D4C7; --ag-muted-dark:#B5AFA2;
+  /* light surfaces */
+  --ag-bg:#F5F2EA; --ag-paper-2:#ECE7DB; --ag-surface:#FFFFFF; --ag-surface-alt:#FAF8F3;
+  --ag-line:#DDD6C6; --ag-border-strong:#C9C1AE; --ag-muted:#5E584C;
   --ag-error:#A3180F; --ag-focus:#A9C2FF;
-  /* order status: orders.status 1..5 (bg / fg) */
+  /* order status: orders.status 1..5 (bg / text) */
   --ag-s1-bg:#FFF1D6; --ag-s1-fg:#7A4D00;  /* Awaiting approval */
   --ag-s2-bg:#E3ECFF; --ag-s2-fg:#1D44B8;  /* Approved */
   --ag-s3-bg:#ECE7FB; --ag-s3-fg:#5432A8;  /* In progress */
@@ -17,24 +17,28 @@
   --ag-s5-bg:#ECEEF2; --ag-s5-fg:#4A5466;  /* Declined, also Inactive */
   --ag-unpaid-bg:#FDE6E4; --ag-unpaid-fg:#A3180F;
   /* type */
-  --ag-font-display:"Barlow Condensed",Inter,system-ui,sans-serif;
-  --ag-font-body:Inter,system-ui,sans-serif;
-  --ag-text-body:15px; --ag-text-sm:14px; --ag-text-xs:12.5px;
-  --ag-h-page:40px; --ag-h-section:18px; --ag-h-display:52px;
+  --ag-font-display:"Big Shoulders Display",Archivo,system-ui,sans-serif; /* 900, uppercase, line-height .9 */
+  --ag-font-body:Archivo,system-ui,sans-serif;
+  --ag-font-mono:"JetBrains Mono",ui-monospace,monospace; /* plates, order numbers, small labels */
+  --ag-text-body:16px; --ag-text-sm:14px; --ag-text-xs:12.5px;
   /* space, radius, shadow */
   --ag-space-1:4px; --ag-space-2:8px; --ag-space-3:12px; --ag-space-4:16px; --ag-space-5:24px; --ag-space-6:32px; --ag-space-7:48px;
-  --ag-radius-control:8px; --ag-radius-card:12px; --ag-radius-pill:999px;
-  --ag-shadow-pop:0 8px 24px rgba(11,26,58,.12);
-  --ag-control-h:44px;   /* NFR-10 minimum */
-  --ag-sidebar-w:248px;
+  --ag-radius-control:6px; --ag-radius-card:10px; --ag-radius-pill:999px;
+  --ag-shadow-hard:8px 8px 0 var(--ag-ink);   /* public service tiles */
+  --ag-shadow-pop:0 8px 24px rgba(20,20,20,.14);
+  --ag-control-h:44px; --ag-sidebar-w:248px;
 }
-/* component starters */
-body{margin:0;background:var(--ag-bg);color:var(--ag-ink);font-family:var(--ag-font-body);font-size:var(--ag-text-body);line-height:1.5}
-.ag-display{font-family:var(--ag-font-display);font-weight:700;text-transform:uppercase;line-height:1}
-.ag-btn{display:inline-flex;align-items:center;justify-content:center;gap:8px;min-height:var(--ag-control-h);padding:0 18px;border-radius:var(--ag-radius-control);font:600 15px/1 var(--ag-font-body);border:1px solid transparent;cursor:pointer;text-decoration:none}
-.ag-btn--primary{background:var(--ag-red-600);color:#fff}.ag-btn--primary:hover{background:var(--ag-red-700)}
-.ag-btn--dark{background:var(--ag-navy-900);color:#fff}
-.ag-btn--secondary{background:#fff;color:var(--ag-navy-900);border-color:var(--ag-border-strong)}
+body{margin:0;background:var(--ag-bg);color:var(--ag-ink);font:var(--ag-text-body)/1.55 var(--ag-font-body)}
+.ag-display{font-family:var(--ag-font-display);font-weight:900;text-transform:uppercase;line-height:.9}
+.ag-mono{font-family:var(--ag-font-mono)}
+.ag-hazard{height:14px;background:repeating-linear-gradient(-45deg,var(--ag-yellow) 0 16px,var(--ag-ink) 16px 32px)}
+.ag-tag{display:inline-flex;font:700 13px/1 var(--ag-font-mono);letter-spacing:.08em;text-transform:uppercase;background:var(--ag-yellow);color:var(--ag-ink);padding:7px 10px;border-radius:4px}
+.ag-btn{display:inline-flex;align-items:center;justify-content:center;gap:8px;min-height:var(--ag-control-h);padding:0 20px;border-radius:var(--ag-radius-control);font:800 15px/1 var(--ag-font-body);border:2px solid transparent;cursor:pointer;text-decoration:none}
+.ag-btn--primary{background:var(--ag-yellow);color:var(--ag-ink)}.ag-btn--primary:hover{background:var(--ag-yellow-hover)}
+.ag-btn--dark{background:var(--ag-ink);color:#fff}
+.ag-btn--secondary{background:#fff;color:var(--ag-ink);border-color:var(--ag-border-strong)}
+.ag-tile{background:#fff;border:3px solid var(--ag-ink);border-radius:var(--ag-radius-card);box-shadow:var(--ag-shadow-hard)}
+.ag-plate{font:700 14px/1 var(--ag-font-mono);border:2px solid var(--ag-ink);border-radius:6px;padding:6px 8px;background:#fff}
 .ag-badge{display:inline-flex;align-items:center;gap:6px;padding:3px 10px;border-radius:var(--ag-radius-pill);font:600 var(--ag-text-xs)/1.5 var(--ag-font-body);white-space:nowrap}
 .ag-badge::before{content:"";width:7px;height:7px;border-radius:50%;background:currentColor}
 .ag-badge--1{background:var(--ag-s1-bg);color:var(--ag-s1-fg)}.ag-badge--2{background:var(--ag-s2-bg);color:var(--ag-s2-fg)}
@@ -42,6 +46,6 @@ body{margin:0;background:var(--ag-bg);color:var(--ag-ink);font-family:var(--ag-f
 .ag-badge--5{background:var(--ag-s5-bg);color:var(--ag-s5-fg)}.ag-badge--unpaid{background:var(--ag-unpaid-bg);color:var(--ag-unpaid-fg)}
 .ag-card{background:var(--ag-surface);border:1px solid var(--ag-line);border-radius:var(--ag-radius-card)}
 .ag-input{width:100%;min-height:var(--ag-control-h);border:1px solid var(--ag-border-strong);border-radius:var(--ag-radius-control);padding:0 12px;font:inherit;background:#fff}
-.ag-input:focus{outline:3px solid var(--ag-focus);border-color:var(--ag-link)}
+.ag-input:focus{outline:3px solid var(--ag-focus);border-color:var(--ag-ink)}
 .ag-input[aria-invalid="true"]{border-color:var(--ag-error)}
 .ag-field-error{margin:6px 0 0;color:var(--ag-error);font-size:var(--ag-text-sm);font-weight:500}

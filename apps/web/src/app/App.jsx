@@ -41,8 +41,8 @@ export default function App() {
         <Route path="/about" element={<About />} />
         <Route path="/services" element={<Services />} />
         <Route path="/contact" element={<Contact />} />
-        <Route path="/login" element={<Login />} />
       </Route>
+      <Route path="/login" element={<Login />} />
       <Route path="/order-status/:hash" element={<OrderStatus />} />
       <Route path="/unauthorized" element={<Unauthorized />} />
       <Route path="*" element={<NotFound />} />

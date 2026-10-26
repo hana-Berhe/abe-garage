@@ -1,3 +1,4 @@
+import Icon from "../../../shared/components/Icon";
 import Totals from "../../../shared/components/Totals";
 import { date, money } from "../../../shared/lib/format";
 
@@ -8,7 +9,7 @@ export default function OrderDocument({ order, title, number, children }) {
     <article className="order-doc ag-card">
       <header className="d-flex justify-content-between flex-wrap gap-3 mb-4">
         <div>
-          <div className="brand"><span className="brand-mark" aria-hidden="true">A</span>{g.name}</div>
+          <div className="brand"><span className="brand-mark" aria-hidden="true"><Icon name="wrench" size={20} /></span>{g.name}</div>
           <div className="muted small mt-1">{[g.address, g.phone, g.email].filter(Boolean).join(" · ")}</div>
         </div>
         <div className="text-end">
