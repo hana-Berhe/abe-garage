@@ -13,7 +13,7 @@ export default function Header() {
       </div>
       <nav className="container d-flex align-items-center justify-content-between flex-wrap gap-2 py-3">
         <Link to="/" className="brand">
-          ABE<span>GARAGE</span>
+          <span className="brand-mark" aria-hidden="true">A</span>Abe Garage
         </Link>
         <div className="main-nav d-flex align-items-center flex-wrap gap-3">
           <NavLink to="/" end>Home</NavLink>
