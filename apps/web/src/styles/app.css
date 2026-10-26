@@ -1,0 +1,112 @@
+/* App styles built on the design tokens in tokens.css (design-hifi v1). */
+@import "./tokens.css";
+
+body { background: var(--ag-bg); color: var(--ag-ink); }
+a { color: var(--ag-link); }
+h1, h2, h3, .ag-display { font-family: var(--ag-font-display); font-weight: 700; text-transform: uppercase; letter-spacing: 0.01em; }
+
+/* Controls: at least 44px (NFR-10) */
+.btn, .form-control, .form-select { min-height: var(--ag-control-h); border-radius: var(--ag-radius-control); font-weight: 600; }
+.form-control, .form-select { font-weight: 400; border-color: var(--ag-border-strong); }
+.form-control:focus, .form-select:focus { box-shadow: 0 0 0 3px var(--ag-focus); border-color: var(--ag-link); }
+.form-label { font-weight: 600; font-size: var(--ag-text-sm); }
+.invalid-feedback { color: var(--ag-error); font-weight: 500; font-size: var(--ag-text-sm); }
+.form-control.is-invalid, .form-select.is-invalid { border-color: var(--ag-error); }
+.btn-sm { min-height: 36px; }
+.btn-brand { background: var(--ag-red-600); border-color: var(--ag-red-600); color: #fff; }
+.btn-brand:hover, .btn-brand:focus, .btn-brand:active, .btn-brand:disabled { background: var(--ag-red-700) !important; border-color: var(--ag-red-700) !important; color: #fff !important; }
+.btn-dark-navy { background: var(--ag-navy-900); border-color: var(--ag-navy-900); color: #fff; }
+.btn-dark-navy:hover { background: var(--ag-navy-700); color: #fff; }
+.btn-outline-secondary { background: #fff; color: var(--ag-navy-900); border-color: var(--ag-border-strong); }
+.btn-outline-secondary:hover { background: var(--ag-surface-alt); color: var(--ag-navy-900); border-color: var(--ag-border-strong); }
+.btn-xl { min-height: 56px; font-size: 1.05rem; }
+
+/* Cards, tables */
+.ag-card { padding: var(--ag-space-5); }
+.ag-card + .ag-card { margin-top: var(--ag-space-5); }
+.card-title-row { display: flex; justify-content: space-between; align-items: center; gap: 8px; flex-wrap: wrap; margin-bottom: var(--ag-space-4); }
+.card-title-row h2 { margin: 0; font-size: 1.35rem; }
+.table { --bs-table-bg: transparent; margin-bottom: 0; }
+.table thead th { font-size: var(--ag-text-xs); text-transform: uppercase; letter-spacing: 0.06em; color: var(--ag-muted); background: var(--ag-surface-alt); border-bottom-color: var(--ag-line); font-weight: 600; }
+.table td { border-bottom-color: var(--ag-line-soft); }
+.kv { display: grid; grid-template-columns: repeat(auto-fit, minmax(160px, 1fr)); gap: var(--ag-space-4); margin: 0; }
+.kv dt { font-size: var(--ag-text-xs); text-transform: uppercase; letter-spacing: 0.06em; color: var(--ag-muted); font-weight: 600; }
+.kv dd { margin: 2px 0 0; font-weight: 600; }
+.muted { color: var(--ag-muted); }
+.plate { display: inline-block; border: 2px solid var(--ag-ink); border-radius: 6px; padding: 1px 8px; font-family: ui-monospace, Menlo, monospace; font-weight: 700; letter-spacing: 0.05em; }
+.money { font-variant-numeric: tabular-nums; white-space: nowrap; }
+.totals { margin-left: auto; max-width: 340px; }
+.totals div { display: flex; justify-content: space-between; padding: 4px 0; }
+.totals .grand { border-top: 2px solid var(--ag-ink); margin-top: 6px; padding-top: 10px; font-weight: 700; }
+.totals .grand span:last-child { font-family: var(--ag-font-display); font-size: 2rem; }
+
+/* Page titles */
+.page-title { font-size: var(--ag-h-page); color: var(--ag-ink); margin-bottom: var(--ag-space-4); line-height: 1; }
+.page-narrow { max-width: 760px; }
+
+/* Public site */
+.topbar { background: var(--ag-navy-900); color: var(--ag-navy-text); font-size: 0.85rem; padding: 6px 0; }
+.site-header { background: #fff; border-bottom: 1px solid var(--ag-line); }
+.brand { font-family: var(--ag-font-display); font-weight: 700; font-size: 1.6rem; color: var(--ag-navy-900); text-decoration: none; text-transform: uppercase; display: inline-flex; align-items: center; gap: 10px; }
+.brand-mark { width: 36px; height: 36px; border-radius: 8px; background: var(--ag-red-600); color: #fff; display: inline-grid; place-items: center; font-size: 1.1rem; }
+.brand-light { color: #fff; }
+.main-nav a:not(.btn) { color: var(--ag-ink); text-decoration: none; font-weight: 600; font-size: 0.9rem; }
+.main-nav a.active:not(.btn) { color: var(--ag-red-600); }
+.site-footer { background: var(--ag-navy-900); color: var(--ag-navy-text); }
+.site-footer a { color: #fff; }
+.hero { background: var(--ag-navy-900); color: #fff; }
+.hero h1 { font-size: clamp(2.4rem, 6vw, var(--ag-h-display)); max-width: 760px; line-height: 1; }
+.eyebrow { color: var(--ag-red-on-dark); font-weight: 700; text-transform: uppercase; letter-spacing: 0.08em; }
+.feature { background: var(--ag-surface); border: 1px solid var(--ag-line); border-radius: var(--ag-radius-card); border-top: 4px solid var(--ag-red-600); padding: 1.25rem; height: 100%; }
+.feature h3 { font-size: 1.3rem; }
+
+/* Staff shell: 248px navy sidebar, top bar, content */
+.admin-shell { display: grid; grid-template-columns: var(--ag-sidebar-w) minmax(0, 1fr); min-height: 100vh; }
+.admin-menu { background: var(--ag-navy-900); color: #fff; padding: var(--ag-space-5) var(--ag-space-3); }
+.admin-menu .brand { color: #fff; font-size: 1.4rem; padding: 0 var(--ag-space-2); margin-bottom: var(--ag-space-5); }
+.admin-menu nav a { display: flex; align-items: center; gap: 12px; min-height: 44px; padding: 0 var(--ag-space-4); color: var(--ag-navy-text); text-decoration: none; border-radius: var(--ag-radius-control); font-weight: 500; }
+.admin-menu nav a:hover { background: var(--ag-navy-800); color: #fff; }
+.admin-menu nav a.active { background: var(--ag-navy-700); color: #fff; font-weight: 600; }
+.admin-menu nav a .ico { width: 20px; text-align: center; color: var(--ag-navy-muted); }
+.admin-menu nav a.active .ico { color: var(--ag-red-on-dark); }
+.admin-top { display: flex; justify-content: space-between; align-items: center; gap: 12px; flex-wrap: wrap; background: #fff; border-bottom: 1px solid var(--ag-line); padding: 10px var(--ag-space-6); min-height: 50px; font-size: var(--ag-text-sm); color: var(--ag-muted); }
+.admin-top .who { color: var(--ag-ink); font-weight: 600; }
+.admin-content { padding: var(--ag-space-6); min-width: 0; }
+
+.counter { background: var(--ag-surface); border: 1px solid var(--ag-line); border-radius: var(--ag-radius-card); padding: var(--ag-space-4) var(--ag-space-5); height: 100%; }
+.counter-value { font-family: var(--ag-font-display); font-weight: 700; font-size: 2.6rem; line-height: 1.1; }
+.counter-label { color: var(--ag-muted); font-size: var(--ag-text-sm); font-weight: 600; }
+.counter a { text-decoration: none; color: inherit; }
+
+/* Technician phone layout: bottom nav (design: MyJobs) */
+.bottom-nav { display: none; }
+
+@media (max-width: 767.98px) {
+  .admin-shell { grid-template-columns: minmax(0, 1fr); align-content: start; }
+  .admin-menu { padding: 0; min-width: 0; }
+  .admin-menu .brand { display: none; }
+  .admin-menu nav { display: flex; overflow-x: auto; gap: 4px; padding: 6px; }
+  .admin-menu nav a { white-space: nowrap; }
+  .admin-top { padding: 8px var(--ag-space-4); }
+  .admin-content { padding: var(--ag-space-4); }
+  .ag-card { padding: var(--ag-space-4); }
+  .topbar span:last-child { display: none; }
+  .page-title { font-size: 32px; }
+  .is-tech .admin-menu { display: none; }
+  .is-tech .admin-content { padding-bottom: 88px; }
+  .is-tech .bottom-nav { display: flex; position: fixed; left: 0; right: 0; bottom: 0; background: var(--ag-navy-900); z-index: 10; }
+  .bottom-nav a { flex: 1; min-height: 60px; display: grid; place-items: center; color: var(--ag-navy-text); text-decoration: none; font-weight: 600; font-size: var(--ag-text-sm); }
+  .bottom-nav a.active { color: #fff; box-shadow: inset 0 3px 0 var(--ag-red-600); }
+}
+
+/* Estimate and invoice print on A4 without menus (NFR-12). */
+.print-only { display: none; }
+@media print {
+  @page { size: A4; margin: 14mm; }
+  body { background: #fff; }
+  .no-print, .site-header, .admin-menu, .admin-top, .bottom-nav, .site-footer { display: none !important; }
+  .admin-shell { display: block; }
+  .admin-content { padding: 0; }
+  .print-only { display: block; }
+  .ag-card { border: 0; padding: 0; }
+}

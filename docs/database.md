@@ -1,0 +1,41 @@
+# Database
+
+MySQL 8, InnoDB, utf8mb4. The whole schema is in [`apps/api/db/schema.sql`](../apps/api/db/schema.sql) and is safe to run twice.
+
+## Tables
+
+| Table | Holds |
+| --- | --- |
+| `roles` | 1 Technician, 2 Manager, 3 Admin |
+| `employees` | staff accounts (bcrypt password hash, role, active flag) |
+| `customers` | car owners; email and phone are unique |
+| `vehicles` | cars; plate and VIN are unique; each belongs to one customer |
+| `services` | the price list (price before VAT, labor hours, active flag) |
+| `orders` | one visit of one car: status 1 to 5, paid flag, copied VAT rate and money totals, order hash |
+| `order_lines` | the jobs in an order, with a copied price, one technician and a status (0 Not started, 1 Started, 2 Done) |
+| `order_history` | who did what and when (created, approved, job_started, paid, email_sent, …) |
+| `garage_settings` | the single row of garage details and the VAT rate (15%) |
+
+## Rules the database enforces
+
+- Unique: staff email, customer email and phone, car plate and VIN, service name, order hash.
+- An order's `(vehicle_id, customer_id)` must match a car of that customer.
+- `status` 1 to 5, `line_status` 0 to 2, prices of 0 or more.
+- `paid` can only be 1 when `status` is 4 (Completed).
+- Only one `garage_settings` row.
+- No cascading deletes.
+- `updated_at` keeps milliseconds so stale edits are always caught.
+
+## Setting it up
+
+```bash
+mysql -u root -p -e "CREATE DATABASE abe_garage CHARACTER SET utf8mb4;
+  CREATE USER 'abe'@'localhost' IDENTIFIED BY 'change_me';
+  GRANT ALL ON abe_garage.* TO 'abe'@'localhost';"
+cp apps/api/.env.example apps/api/.env      # fill in DB_* and INSTALL_ADMIN_*
+npm run dev:api
+curl http://localhost:8000/install           # once: tables, roles, settings, first admin
+npm run seed                                  # optional demo data
+```
+
+`/install` locks itself once any staff account exists (it then answers 403).
