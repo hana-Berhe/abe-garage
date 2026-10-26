@@ -7,5 +7,6 @@ router.use(require("./settings.routes"));
 router.use(require("./customer.routes"));
 router.use(require("./vehicle.routes"));
 router.use(require("./service.routes"));
+router.use(require("./order.routes"));
 
 module.exports = router;

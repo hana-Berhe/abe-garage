@@ -88,7 +88,7 @@ async function list({ page, search, limit, offset, roleId, activeOnly }) {
      ORDER BY e.active DESC, e.first_name, e.last_name LIMIT ? OFFSET ?`,
     [...params, limit, offset]
   );
-  return pageResult(rows, total, page);
+  return pageResult(rows, total, page, limit);
 }
 
 async function getById(id) {

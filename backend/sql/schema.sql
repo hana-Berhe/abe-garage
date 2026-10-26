@@ -1,6 +1,7 @@
 -- Abe Garage schema: 9 tables, MySQL 8 (InnoDB, utf8mb4).
 -- Owned by Member 1. Safe to run twice (IF NOT EXISTS, INSERT IGNORE).
 -- Rows are deactivated, never deleted, so no foreign key cascades.
+-- updated_at keeps milliseconds so two quick saves never share a value (NFR-16).
 
 CREATE TABLE IF NOT EXISTS roles (
   role_id   TINYINT UNSIGNED NOT NULL,
@@ -20,7 +21,7 @@ CREATE TABLE IF NOT EXISTS employees (
   role_id       TINYINT UNSIGNED NOT NULL,
   active        TINYINT(1)   NOT NULL DEFAULT 1,
   created_at    DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
-  updated_at    DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+  updated_at    DATETIME(3) NOT NULL DEFAULT CURRENT_TIMESTAMP(3) ON UPDATE CURRENT_TIMESTAMP(3),
   PRIMARY KEY (employee_id),
   UNIQUE KEY uq_employees_email (email),
   KEY ix_employees_role_active (role_id, active),
@@ -35,7 +36,7 @@ CREATE TABLE IF NOT EXISTS customers (
   phone       VARCHAR(30)  NOT NULL,
   active      TINYINT(1)   NOT NULL DEFAULT 1,
   created_at  DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
-  updated_at  DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+  updated_at  DATETIME(3) NOT NULL DEFAULT CURRENT_TIMESTAMP(3) ON UPDATE CURRENT_TIMESTAMP(3),
   PRIMARY KEY (customer_id),
   UNIQUE KEY uq_customers_email (email),
   UNIQUE KEY uq_customers_phone (phone),
@@ -54,7 +55,7 @@ CREATE TABLE IF NOT EXISTS vehicles (
   vin         VARCHAR(17)  NULL,
   color       VARCHAR(30)  NULL,
   created_at  DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
-  updated_at  DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+  updated_at  DATETIME(3) NOT NULL DEFAULT CURRENT_TIMESTAMP(3) ON UPDATE CURRENT_TIMESTAMP(3),
   PRIMARY KEY (vehicle_id),
   UNIQUE KEY uq_vehicles_plate (plate),
   UNIQUE KEY uq_vehicles_vin (vin),
@@ -72,7 +73,7 @@ CREATE TABLE IF NOT EXISTS services (
   labor_hours DECIMAL(4,2)  NOT NULL DEFAULT 0,
   active      TINYINT(1)    NOT NULL DEFAULT 1,
   created_at  DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
-  updated_at  DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+  updated_at  DATETIME(3) NOT NULL DEFAULT CURRENT_TIMESTAMP(3) ON UPDATE CURRENT_TIMESTAMP(3),
   PRIMARY KEY (service_id),
   UNIQUE KEY uq_services_name (name),
   CONSTRAINT ck_services_price CHECK (price >= 0),
@@ -101,7 +102,7 @@ CREATE TABLE IF NOT EXISTS orders (
   paid_at              DATETIME      NULL,
   paid_received_by     INT UNSIGNED  NULL,
   created_at           DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
-  updated_at           DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+  updated_at           DATETIME(3) NOT NULL DEFAULT CURRENT_TIMESTAMP(3) ON UPDATE CURRENT_TIMESTAMP(3),
   PRIMARY KEY (order_id),
   UNIQUE KEY uq_orders_hash (order_hash),
   KEY ix_orders_status_paid (status, paid),
@@ -129,7 +130,7 @@ CREATE TABLE IF NOT EXISTS order_lines (
   done_at         DATETIME NULL,
   technician_note TEXT NULL,
   created_at      DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
-  updated_at      DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+  updated_at      DATETIME(3) NOT NULL DEFAULT CURRENT_TIMESTAMP(3) ON UPDATE CURRENT_TIMESTAMP(3),
   PRIMARY KEY (line_id),
   UNIQUE KEY uq_order_lines_service (order_id, service_id),
   KEY ix_order_lines_tech (technician_id, line_status),
@@ -162,7 +163,7 @@ CREATE TABLE IF NOT EXISTS garage_settings (
   phone       VARCHAR(30)  NULL,
   email       VARCHAR(255) NULL,
   vat_rate    DECIMAL(5,2) NOT NULL DEFAULT 15.00,
-  updated_at  DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+  updated_at  DATETIME(3) NOT NULL DEFAULT CURRENT_TIMESTAMP(3) ON UPDATE CURRENT_TIMESTAMP(3),
   PRIMARY KEY (settings_id),
   CONSTRAINT ck_settings_single_row CHECK (settings_id = 1),
   CONSTRAINT ck_settings_vat CHECK (vat_rate >= 0 AND vat_rate <= 100)

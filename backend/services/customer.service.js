@@ -54,7 +54,7 @@ async function list({ page, search, limit, offset, activeOnly }) {
      ORDER BY c.created_at DESC, c.customer_id DESC LIMIT ? OFFSET ?`,
     [...params, limit, offset]
   );
-  return pageResult(rows, total, page);
+  return pageResult(rows, total, page, limit);
 }
 
 async function getById(id) {

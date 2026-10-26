@@ -13,7 +13,6 @@ import Unauthorized from "./pages/public/Unauthorized";
 import NotFound from "./pages/public/NotFound";
 
 import Dashboard from "./pages/admin/dashboard/Dashboard";
-import ComingSoon from "./pages/admin/ComingSoon";
 import EmployeeList from "./pages/admin/employees/EmployeeList";
 import EmployeeForm from "./pages/admin/employees/EmployeeForm";
 import Settings from "./pages/admin/settings/Settings";
@@ -23,6 +22,11 @@ import CustomerForm from "./pages/admin/customers/CustomerForm";
 import CustomerProfile from "./pages/admin/customers/CustomerProfile";
 import VehiclePage from "./pages/admin/customers/VehiclePage";
 import ServiceList from "./pages/admin/services/ServiceList";
+import OrderList from "./pages/admin/orders/OrderList";
+import NewOrder from "./pages/admin/orders/NewOrder";
+import OrderDetail from "./pages/admin/orders/OrderDetail";
+import Estimate from "./pages/admin/orders/Estimate";
+import MyJobs from "./pages/admin/jobs/MyJobs";
 
 const { TECHNICIAN: T, ADMIN: A } = ROLES;
 
@@ -42,9 +46,11 @@ export default function App() {
 
       <Route path="/admin" element={<PrivateAuthRoute roles={STAFF}><AdminLayout /></PrivateAuthRoute>}>
         <Route index element={<Dashboard />} />
-        <Route path="my-jobs" element={<PrivateAuthRoute roles={[T]}><ComingSoon title="My jobs" owner="Member 3" /></PrivateAuthRoute>} />
-        <Route path="orders" element={<ComingSoon title="Orders" owner="Member 3" />} />
-        <Route path="order/new" element={<PrivateAuthRoute roles={OFFICE}><ComingSoon title="New order" owner="Member 3" /></PrivateAuthRoute>} />
+        <Route path="my-jobs" element={<PrivateAuthRoute roles={[T]}><MyJobs /></PrivateAuthRoute>} />
+        <Route path="orders" element={<OrderList />} />
+        <Route path="order/:id" element={<OrderDetail />} />
+        <Route path="order/:id/estimate" element={<PrivateAuthRoute roles={OFFICE}><Estimate /></PrivateAuthRoute>} />
+        <Route path="order/new" element={<PrivateAuthRoute roles={OFFICE}><NewOrder /></PrivateAuthRoute>} />
         <Route path="customers" element={<CustomerList />} />
         <Route path="customer/new" element={<PrivateAuthRoute roles={OFFICE}><CustomerForm /></PrivateAuthRoute>} />
         <Route path="customer/:id/edit" element={<PrivateAuthRoute roles={OFFICE}><CustomerForm /></PrivateAuthRoute>} />
