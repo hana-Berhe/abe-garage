@@ -8,5 +8,8 @@ router.use(require("./modules/customers/customer.routes"));
 router.use(require("./modules/vehicles/vehicle.routes"));
 router.use(require("./modules/services/service.routes"));
 router.use(require("./modules/orders/order.routes"));
+router.use(require("./modules/invoices/invoice.routes"));
+router.use(require("./modules/public/public.routes"));
+router.use(require("./modules/dashboard/dashboard.routes"));
 
 module.exports = router;

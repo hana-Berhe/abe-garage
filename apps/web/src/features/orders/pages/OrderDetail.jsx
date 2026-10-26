@@ -1,7 +1,7 @@
 import { useCallback, useEffect, useState } from "react";
 import { Link, useLocation, useParams } from "react-router-dom";
 import { Modal } from "react-bootstrap";
-import orderService from "../order.api";
+import orderService, { invoiceApi } from "../order.api";
 import employeeService from "../../employees/employee.api";
 import serviceService from "../../services/service.api";
 import Alert from "../../../shared/components/Alert";
@@ -134,6 +134,16 @@ export default function OrderDetail() {
 
       <div className="d-flex gap-2 flex-wrap mb-4 no-print">
         <button type="button" className="btn btn-outline-secondary" onClick={copyLink}>Copy status link</button>
+        {office && order.status !== 5 && (
+          <button type="button" className="btn btn-outline-secondary" disabled={busy} onClick={async () => {
+            setBusy(true);
+            try {
+              const r = await invoiceApi.resendEmail(id);
+              if (r.sent) setNotice("Email sent to the customer."); else setError({ message: "The email could not be sent. Use Copy status link instead." });
+              load();
+            } catch (e) { setError(e); } finally { setBusy(false); }
+          }}>Resend email</button>
+        )}
         {office && <Link to={`/admin/order/${id}/estimate`} className="btn btn-outline-secondary">Print estimate</Link>}
         {office && order.status === 4 && <Link to={`/admin/order/${id}/invoice`} className="btn btn-brand">{order.paid ? "Invoice" : "Invoice and payment"}</Link>}
       </div>
