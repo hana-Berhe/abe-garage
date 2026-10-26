@@ -1,0 +1,21 @@
+{
+  "name": "abe-garage",
+  "version": "0.1.0",
+  "private": true,
+  "description": "Abe Garage: car repair shop management (React + Express + MySQL)",
+  "workspaces": [
+    "apps/api",
+    "apps/web"
+  ],
+  "scripts": {
+    "dev": "npm run dev --workspace apps/api & npm run dev --workspace apps/web",
+    "dev:api": "npm run dev --workspace apps/api",
+    "dev:web": "npm run dev --workspace apps/web",
+    "build": "npm run build --workspace apps/web",
+    "seed": "npm run seed --workspace apps/api",
+    "test": "npm test --workspace apps/api"
+  },
+  "engines": {
+    "node": ">=18"
+  }
+}
