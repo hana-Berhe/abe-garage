@@ -3,6 +3,8 @@ import settingsService from "../settings.api";
 import Field from "../../../shared/components/Field";
 import Alert from "../../../shared/components/Alert";
 
+const toForm = (s) => ({ ...s, address: s.address || "", phone: s.phone || "", email: s.email || "", closing_time: s.closing_time || "" });
+
 export default function Settings() {
   const [form, setForm] = useState(null);
   const [error, setError] = useState(null);
@@ -10,7 +12,7 @@ export default function Settings() {
   const [busy, setBusy] = useState(false);
 
   useEffect(() => {
-    settingsService.get().then((s) => setForm({ ...s, address: s.address || "", phone: s.phone || "", email: s.email || "" })).catch(setError);
+    settingsService.get().then((s) => setForm(toForm(s))).catch(setError);
   }, []);
 
   const change = (e) => {
@@ -24,7 +26,7 @@ export default function Settings() {
     setError(null);
     try {
       const s = await settingsService.update(form);
-      setForm({ ...s, address: s.address || "", phone: s.phone || "", email: s.email || "" });
+      setForm(toForm(s));
       setSaved(true);
     } catch (err) {
       setError(err);
@@ -48,6 +50,10 @@ export default function Settings() {
         <Field label="Phone" name="phone" value={form.phone} onChange={change} error={fieldError("phone")} />
         <Field label="Email" name="email" type="email" value={form.email} onChange={change} error={fieldError("email")} />
         <Field label="VAT rate (%)" name="vat_rate" type="number" step="0.01" min="0" max="100" value={form.vat_rate} onChange={change} error={fieldError("vat_rate")} />
+        <div className="row">
+          <div className="col-6"><Field label="Opens at" name="opening_time" type="time" value={form.opening_time} onChange={change} error={fieldError("opening_time")} /></div>
+          <div className="col-6"><Field label="Closes at (optional)" name="closing_time" type="time" value={form.closing_time} onChange={change} error={fieldError("closing_time")} /></div>
+        </div>
         <button type="submit" className="btn btn-brand" disabled={busy}>{busy ? "Saving…" : "Save settings"}</button>
       </form>
     </div>

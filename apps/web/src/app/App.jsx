@@ -27,6 +27,8 @@ import NewOrder from "../features/orders/pages/NewOrder";
 import OrderDetail from "../features/orders/pages/OrderDetail";
 import Estimate from "../features/orders/pages/Estimate";
 import MyJobs from "../features/jobs/pages/MyJobs";
+import Invoice from "../features/invoices/pages/Invoice";
+import OrderStatus from "../features/tracking/pages/OrderStatus";
 
 const { TECHNICIAN: T, ADMIN: A } = ROLES;
 
@@ -39,6 +41,7 @@ export default function App() {
         <Route path="/about" element={<About />} />
         <Route path="/services" element={<Services />} />
         <Route path="/contact" element={<Contact />} />
+        <Route path="/order-status/:hash" element={<OrderStatus />} />
         <Route path="/login" element={<Login />} />
         <Route path="/unauthorized" element={<Unauthorized />} />
         <Route path="*" element={<NotFound />} />
@@ -49,6 +52,7 @@ export default function App() {
         <Route path="my-jobs" element={<PrivateAuthRoute roles={[T]}><MyJobs /></PrivateAuthRoute>} />
         <Route path="orders" element={<OrderList />} />
         <Route path="order/:id" element={<OrderDetail />} />
+        <Route path="order/:id/invoice" element={<PrivateAuthRoute roles={OFFICE}><Invoice /></PrivateAuthRoute>} />
         <Route path="order/:id/estimate" element={<PrivateAuthRoute roles={OFFICE}><Estimate /></PrivateAuthRoute>} />
         <Route path="order/new" element={<PrivateAuthRoute roles={OFFICE}><NewOrder /></PrivateAuthRoute>} />
         <Route path="customers" element={<CustomerList />} />

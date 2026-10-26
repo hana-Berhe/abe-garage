@@ -11,6 +11,8 @@ const pool = mysql.createPool({
   timezone: "Z",
   // DECIMAL money columns come back as strings; keep them exact.
   decimalNumbers: false,
+  // DATE columns (such as the ready date) stay plain "YYYY-MM-DD" strings.
+  dateStrings: ["DATE"],
 });
 
 pool.pool.on("connection", (conn) => {

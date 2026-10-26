@@ -163,6 +163,8 @@ CREATE TABLE IF NOT EXISTS garage_settings (
   phone       VARCHAR(30)  NULL,
   email       VARCHAR(255) NULL,
   vat_rate    DECIMAL(5,2) NOT NULL DEFAULT 15.00,
+  opening_time TIME NOT NULL DEFAULT '08:00:00',
+  closing_time TIME NULL,
   updated_at  DATETIME(3) NOT NULL DEFAULT CURRENT_TIMESTAMP(3) ON UPDATE CURRENT_TIMESTAMP(3),
   PRIMARY KEY (settings_id),
   CONSTRAINT ck_settings_single_row CHECK (settings_id = 1),
@@ -174,5 +176,5 @@ INSERT IGNORE INTO roles (role_id, role_name) VALUES
   (2, 'Manager'),
   (3, 'Admin');
 
-INSERT IGNORE INTO garage_settings (settings_id, name, address, phone, email, vat_rate) VALUES
-  (1, 'Abe Garage', 'Addis Ababa', '+251 000 000 000', 'info@abegarage.example', 15.00);
+INSERT IGNORE INTO garage_settings (settings_id, name, address, phone, email, vat_rate, opening_time) VALUES
+  (1, 'Abe Garage', 'Addis Ababa', '+251 000 000 000', 'info@abegarage.example', 15.00, '08:00:00');
