@@ -1,6 +1,6 @@
 const bcrypt = require("bcrypt");
 const jwt = require("jsonwebtoken");
-const { pool } = require("../../config/db");
+const { pool, withTransaction } = require("../../config/db");
 const { ApiError } = require("../../shared/respond");
 const { pageResult } = require("../../shared/pagination");
 const { ROLES } = require("../../middlewares/auth");
@@ -107,6 +107,7 @@ async function getById(id) {
 }
 
 // FR-EMP-04, FR-EMP-05, NFR-16. The save only applies if updated_at still matches.
+// BE-012: the garage always keeps at least one active admin, even when two admins edit each other at once.
 async function update(id, data, actingEmployeeId) {
   const current = await getById(id);
   if (id === actingEmployeeId && (data.active === 0 || data.role_id !== ROLES.ADMIN)) {
@@ -126,15 +127,31 @@ async function update(id, data, actingEmployeeId) {
   if (data.password || data.role_id !== current.role_id || data.active !== current.active) {
     sets.push("token_version = token_version + 1");
   }
-  const [result] = await pool.query(
-    `UPDATE employees SET ${sets.join(", ")} WHERE employee_id = ? AND updated_at = ?`,
-    [...params, id, new Date(data.updated_at)]
-  );
-  if (result.affectedRows === 0) {
-    throw new ApiError(409, "Someone else changed this employee since you opened it. Reload to see their changes.", {
-      current,
-    });
-  }
+  const removesAdmin = data.role_id !== ROLES.ADMIN || data.active === 0;
+
+  await withTransaction(async (conn) => {
+    if (removesAdmin) {
+      // Lock every active admin in the same order, so two of these edits run one after the other.
+      const [admins] = await conn.query(
+        "SELECT employee_id FROM employees WHERE role_id = ? AND active = 1 ORDER BY employee_id FOR UPDATE",
+        [ROLES.ADMIN]
+      );
+      if (admins.some((a) => a.employee_id === id) && admins.length === 1) {
+        throw new ApiError(409, "At least one active admin is required. Make someone else an admin first.", {
+          field: data.active === 0 ? "active" : "role_id",
+        });
+      }
+    }
+    const [result] = await conn.query(
+      `UPDATE employees SET ${sets.join(", ")} WHERE employee_id = ? AND updated_at = ?`,
+      [...params, id, new Date(data.updated_at)]
+    );
+    if (result.affectedRows === 0) {
+      throw new ApiError(409, "Someone else changed this employee since you opened it. Reload to see their changes.", {
+        current,
+      });
+    }
+  });
   return getById(id);
 }
 
