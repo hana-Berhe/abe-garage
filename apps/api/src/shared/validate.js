@@ -26,7 +26,8 @@ function requireEmail(body, field = "email") {
 function requirePassword(body, field = "password") {
   const value = typeof body[field] === "string" ? body[field] : "";
   if (value.length < 8) throw badField(field, "Password must be at least 8 characters");
-  if (value.length > 72) throw badField(field, "Password is too long (max 72)");
+  // bcrypt only reads the first 72 bytes, and letters like "é" or "አ" take more than one byte.
+  if (Buffer.byteLength(value, "utf8") > 72) throw badField(field, "Password is too long (max 72 bytes)");
   return value;
 }
 

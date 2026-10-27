@@ -3,7 +3,7 @@
 Three tiers and one API. React pages talk only to the Express REST API, and only the API talks to MySQL. Email goes one way, from the API to the customer, and only after the data is saved.
 
 ```
-apps/web (React + Vite, :5173)  ──HTTP JSON──▶  apps/api (Express, :8000)  ──SQL──▶  MySQL 8 (9 tables)
+apps/web (React + Vite, :5173)  ──HTTP JSON──▶  apps/api (Express, :8000)  ──SQL──▶  MySQL 8 (10 tables)
                                                        └──SMTP──▶ customer email
 ```
 
@@ -27,7 +27,7 @@ apps/api/
 │   │       └── <name>.service.js     business rules and SQL (? placeholders only)
 │   └── shared/                money, mailer, pagination, responses, validation helpers
 ├── db/
-│   ├── schema.sql             the 9 tables (only Member 1 changes it)
+│   ├── schema.sql             the 10 tables (only Member 1 changes it)
 │   └── seeds/seed.js          demo data for local work
 └── tests/unit/                node:test unit tests
 ```
