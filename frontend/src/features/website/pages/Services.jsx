@@ -1,6 +1,7 @@
 import { useGarage, usePublicServices } from "../useGarage";
 import PageHero from "../components/PageHero";
 import CallBand from "../components/CallBand";
+import WhyChooseUs from "../components/WhyChooseUs";
 import CallUs from "../components/CallUs";
 import { duration } from "../components/ServiceCard";
 import Icon, { SERVICE_ICONS } from "../../../shared/components/Icon";
@@ -30,26 +31,30 @@ export default function Services() {
 
   return (
     <>
-      <PageHero crumb="Services" eyebrow="Our services" title={<>Repairs and servicing,<br /><em>done right.</em></>}>
+      <PageHero crumb="Services" title="Our services">
         <p>What we do every day. Not sure which one you need? Tell us what the car is doing and we will work it out together.</p>
         <div className="actions">
           <CallUs label={g.phone ? `Call ${g.phone}` : "Call us"} />
         </div>
       </PageHero>
 
-      <section className="section on-light">
+      <section className="section">
         <div className="wrap">
           {error && <div className="alert-bad" role="alert" style={{ marginBottom: 20 }}>{error}</div>}
-          <div className="services wide">
+          <div className="shead">
+            <h2 className="h2">What we do every day</h2>
+            <p className="lead">Not sure which one you need? Tell us what the car is doing and we will work it out together.</p>
+          </div>
+          <div className="services">
             {(services || []).map((s, i) => (
               <article key={s.service_id} className="service" id={`service-${s.service_id}`}>
-                <div className="row-top">
-                  <div className="sicon"><Icon name={SERVICE_ICONS[i % SERVICE_ICONS.length]} size={26} /></div>
-                  <div><h3>{s.name}</h3>{s.description && <p>{s.description}</p>}</div>
-                </div>
-                <div className="meta">
-                  <span><Icon name="clock" size={16} />{duration(s.labor_hours) || "Depends on the fault"}</span>
-                  <CallUs className="more" label="Call for a price" />
+                <small className="kicker">Service and repairs</small>
+                <h3>{s.name}</h3>
+                {s.description && <p>{s.description}</p>}
+                <div className="meta"><Icon name="clock" size={16} />{duration(s.labor_hours) || "Depends on the fault"}</div>
+                <div className="service-foot">
+                  <CallUs className="more" label="Call for a price +" />
+                  <span className="sicon"><Icon name={SERVICE_ICONS[i % SERVICE_ICONS.length]} size={44} stroke={1.2} /></span>
                 </div>
               </article>
             ))}
@@ -60,9 +65,9 @@ export default function Services() {
 
       <section className="section dk-sec">
         <div className="wrap">
-          <div className="shead left">
+          <div className="shead">
             <div className="eyebrow">How it works</div>
-            <h2 className="h2">A clear price, <em>before</em> any work.</h2>
+            <h2 className="h2">A clear price, before any work</h2>
             <p className="lead">We never start a repair you have not agreed to. This is how every job goes. Bring the car in from {opens}.</p>
           </div>
           <div className="steps">
@@ -71,9 +76,11 @@ export default function Services() {
         </div>
       </section>
 
-      <section className="section on-light">
+      <WhyChooseUs services={services} />
+
+      <section className="section">
         <div className="wrap">
-          <div className="shead"><div className="eyebrow">Good to know</div><h2 className="h2">Common questions</h2></div>
+          <div className="shead"><h2 className="h2">Common questions</h2></div>
           <div className="faq">
             {FAQ.map(([q, a], i) => <details key={q} open={i === 0}><summary>{q}</summary><p>{a}</p></details>)}
           </div>

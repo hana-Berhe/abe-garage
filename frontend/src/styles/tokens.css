@@ -1,23 +1,29 @@
-/* Abe Garage design tokens, version 3: charcoal and orange (from Hana's index 2.html).
-   Values match design-hifi/tokens.css. The short names lower down are the names the app's CSS uses. */
-@import url("https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&family=JetBrains+Mono:wght@500;700&display=swap");
+/* Abe Garage design tokens, version 5: red and navy (the classic Abe Garage theme from Hana's screenshots).
+   The short names lower down are the names the app's CSS uses. */
+@import url("https://fonts.googleapis.com/css2?family=Roboto:ital,wght@0,400;0,500;0,700;0,900;1,400;1,700;1,900&family=JetBrains+Mono:wght@500;700&display=swap");
 :root{
-  --ag-orange:#FF7A24; --ag-orange-hover:#FF8C42; --ag-orange-text:#A34C08; --ag-orange-tint:#FFF0E5;
-  --ag-black:#101318; --ag-header:#14181E; --ag-coal:#1B2027; --ag-panel:#20262D; --ag-steel:#343D45; --ag-ink:#11151A;
-  --ag-muted:#5B636F; --ag-muted-dark:#A3ACB7; --ag-on-dark:#CFD4DA;
-  --ag-line:#E3E6EA; --ag-line-strong:#CBD0D6; --ag-bg:#F5F5F3; --ag-surface:#FFFFFF; --ag-error:#A3180F;
+  /* Red: buttons, the short line after titles, the line under cards. White text on it passes AA (4.8:1). */
+  --ag-red:#E3140F; --ag-red-hover:#C40F0B; --ag-red-text:#C40F0B; --ag-red-tint:#FDE8E7;
+  /* Navy: headings, top bar, footer, admin menu. */
+  --ag-navy:#081A4B; --ag-navy-hover:#0F2A6E; --ag-navy-deep:#0A1532; --ag-topbar:#08153E;
+  --ag-menu:#222B48; --ag-menu-head:#1E2235; --ag-menu-line:#343D5E;
+  --ag-ink:#222222; --ag-muted:#5F6577; --ag-muted-dark:#AEB4C6; --ag-on-dark:#D4D8E4;
+  --ag-line:#E1E3EA; --ag-line-strong:#C9CDD8; --ag-bg:#F4F5F8; --ag-surface:#FFFFFF; --ag-error:#A3180F;
+  /* Kept from v4 so every order status still has its own colour. */
   --ag-status-1-bg:#FFF1D6; --ag-status-1-text:#7A4D00; /* Awaiting approval */
   --ag-status-2-bg:#E3ECFF; --ag-status-2-text:#1D44B8; /* Approved */
-  --ag-status-3-bg:#ECE7FB; --ag-status-3-text:#5432A8; /* In progress */
+  --ag-status-3-bg:#FFE9A8; --ag-status-3-text:#6B4A00; /* In progress (yellow, as in the design) */
   --ag-status-4-bg:#DCF2E8; --ag-status-4-text:#0B6446; /* Completed, also Paid */
   --ag-status-5-bg:#ECEEF2; --ag-status-5-text:#4A5466; /* Declined, also Inactive */
   --ag-unpaid-bg:#FDE6E4; --ag-unpaid-text:#A3180F;
-  --ag-font:Inter, ui-sans-serif, system-ui, -apple-system, "Segoe UI", sans-serif;
+  --ag-font:Roboto, ui-sans-serif, system-ui, -apple-system, "Segoe UI", sans-serif;
   --ag-font-mono:"JetBrains Mono", ui-monospace, Menlo, monospace;
-  --ag-radius-control:6px; --ag-radius-card:9px; --ag-radius-tile:12px; --ag-radius-pill:999px;
-  --ag-shadow-card:0 7px 28px rgba(16,19,24,.04); --ag-shadow-pop:0 20px 50px rgba(16,19,24,.10);
+  --ag-radius-control:0; --ag-radius-card:0; --ag-radius-tile:0; --ag-radius-pill:999px;
+  --ag-shadow-card:0 4px 20px rgba(8,26,75,.05); --ag-shadow-pop:0 20px 50px rgba(8,26,75,.12);
   --ag-space-1:4px; --ag-space-2:8px; --ag-space-3:12px; --ag-space-4:16px; --ag-space-5:24px; --ag-space-6:32px; --ag-space-7:48px; --ag-space-8:96px;
   --ag-container:1180px;
+  /* The faint diagonal lines behind admin and status pages. */
+  --ag-hatch:repeating-linear-gradient(135deg, rgba(8,26,75,.022) 0 2px, transparent 2px 9px);
 
   /* Names used by app.css and website.css */
   --ag-font-body:var(--ag-font); --ag-font-display:var(--ag-font);
@@ -27,16 +33,16 @@
   --ag-s4-bg:var(--ag-status-4-bg); --ag-s4-fg:var(--ag-status-4-text);
   --ag-s5-bg:var(--ag-status-5-bg); --ag-s5-fg:var(--ag-status-5-text);
   --ag-unpaid-fg:var(--ag-unpaid-text);
-  --ag-border-strong:var(--ag-line-strong); --ag-surface-alt:#F8F9FA; --ag-focus:#FFC9A3;
+  --ag-border-strong:var(--ag-line-strong); --ag-surface-alt:#F7F8FB; --ag-focus:#B9C6EA;
   --ag-text-body:15px; --ag-text-sm:14px; --ag-text-xs:12.5px;
-  --ag-control-h:44px; --ag-sidebar-w:248px;
+  --ag-control-h:46px; --ag-sidebar-w:300px;
 }
-body{margin:0;background:var(--ag-bg);color:var(--ag-ink);font:var(--ag-text-body)/1.5 var(--ag-font)}
+body{margin:0;background:var(--ag-bg);color:var(--ag-ink);font:var(--ag-text-body)/1.6 var(--ag-font)}
 .ag-mono{font-family:var(--ag-font-mono)}
-.ag-badge{display:inline-flex;align-items:center;gap:6px;padding:3px 10px;border-radius:var(--ag-radius-pill);font:600 var(--ag-text-xs)/1.5 var(--ag-font);white-space:nowrap}
+.ag-badge{display:inline-flex;align-items:center;gap:6px;padding:3px 10px;border-radius:var(--ag-radius-pill);font:700 var(--ag-text-xs)/1.5 var(--ag-font);white-space:nowrap}
 .ag-badge::before{content:"";width:7px;height:7px;border-radius:50%;background:currentColor}
 .ag-badge--1{background:var(--ag-s1-bg);color:var(--ag-s1-fg)}.ag-badge--2{background:var(--ag-s2-bg);color:var(--ag-s2-fg)}
 .ag-badge--3{background:var(--ag-s3-bg);color:var(--ag-s3-fg)}.ag-badge--4,.ag-badge--paid{background:var(--ag-s4-bg);color:var(--ag-s4-fg)}
 .ag-badge--5{background:var(--ag-s5-bg);color:var(--ag-s5-fg)}.ag-badge--unpaid{background:var(--ag-unpaid-bg);color:var(--ag-unpaid-fg)}
-.ag-badge--new{background:var(--ag-orange-tint);color:var(--ag-orange-text)}
-.ag-card{background:var(--ag-surface);border:1px solid var(--ag-line);border-radius:12px}
+.ag-badge--new{background:var(--ag-red-tint);color:var(--ag-red-text)}
+.ag-card{background:var(--ag-surface);border:0;border-bottom:3px solid var(--ag-red);border-radius:0;box-shadow:var(--ag-shadow-card)}

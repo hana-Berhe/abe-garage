@@ -17,11 +17,11 @@ export default function About() {
   const opens = g.opening_time ? hour12(g.opening_time).replace(" AM", "").replace(" PM", "") : "8:00";
   return (
     <>
-      <PageHero crumb="About" eyebrow={`About ${g.name || "Abe Garage"}`} title={<>A local garage that<br /><em>treats you right.</em></>}>
+      <PageHero crumb="About us" title="About us">
         <p>We are a small, hands-on team fixing everyday cars. We keep it simple: find the real problem, explain it clearly, and only do the work you agree to.</p>
       </PageHero>
 
-      <section className="section white on-light">
+      <section className="section white">
         <div className="wrap split">
           <div className="art">
             <img src={garageArt} alt="Drawing of the garage front" />
@@ -29,7 +29,7 @@ export default function About() {
           </div>
           <div>
             <div className="eyebrow">Our story</div>
-            <h2 className="h2">Built on one simple rule:<br />ask first.</h2>
+            <h2 className="h2">Built on one simple rule: ask first</h2>
             <p className="lead">We service, check and repair all makes of car, from a quick oil change to finding the cause of a warning light. Since day one, we have called customers before any extra work, so the bill at the end is never a surprise.</p>
             <div className="stats">
               <div><b>{services ? services.length : "–"}</b>Services we offer</div>
@@ -40,12 +40,17 @@ export default function About() {
         </div>
       </section>
 
-      <section className="section on-light">
+      <section className="section">
         <div className="wrap">
-          <div className="shead"><div className="eyebrow">What we promise</div><h2 className="h2">How we work with you</h2></div>
+          <div className="shead"><h2 className="h2">How we work with you</h2></div>
           <div className="services">
             {PROMISES.map(([icon, t, p]) => (
-              <article key={t} className="service"><div className="sicon"><Icon name={icon} size={26} /></div><h3>{t}</h3><p>{p}</p></article>
+              <article key={t} className="service">
+                <small className="kicker">Our promise</small>
+                <h3>{t}</h3>
+                <p>{p}</p>
+                <div className="service-foot"><span /><span className="sicon"><Icon name={icon} size={44} stroke={1.2} /></span></div>
+              </article>
             ))}
           </div>
         </div>
