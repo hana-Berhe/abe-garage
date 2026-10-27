@@ -1,27 +1,24 @@
 import { NavLink, Outlet } from "react-router-dom";
-import { format } from "date-fns";
 import AdminMenu from "./AdminMenu";
+import Header from "./Header";
+import Footer from "./Footer";
 import { useAuth } from "../features/auth/AuthContext";
-import { ROLES, ROLE_NAMES } from "../shared/constants/roles";
+import { ROLES } from "../shared/constants/roles";
 
+// Staff pages: the site header and footer, with the admin menu on the left (design: admin.png).
 export default function AdminLayout() {
-  const { employee, logout } = useAuth();
+  const { employee } = useAuth();
   const isTech = employee.role === ROLES.TECHNICIAN;
   return (
-    <div className={`admin-shell${isTech ? " is-tech" : ""}`}>
-      <AdminMenu />
-      <div className="d-flex flex-column min-w-0">
-        <header className="admin-top no-print">
-          <span>{format(new Date(), "EEEE, d MMMM yyyy")}</span>
-          <span className="d-flex d-md-none align-items-center gap-3">
-            <span><span className="who">{employee.name}</span> · {ROLE_NAMES[employee.role]}</span>
-            <button type="button" className="btn btn-sm btn-outline-secondary" onClick={logout}>Log out</button>
-          </span>
-        </header>
-        <main className="admin-content flex-grow-1">
+    <div className={`admin-page${isTech ? " is-tech" : ""}`}>
+      <div className="ag chrome no-print"><Header /></div>
+      <div className="admin-shell">
+        <AdminMenu />
+        <main className="admin-content">
           <Outlet />
         </main>
       </div>
+      <div className="ag chrome no-print"><Footer /></div>
       {isTech && (
         <nav className="bottom-nav no-print" aria-label="Technician menu">
           <NavLink to="/admin/my-jobs">My jobs</NavLink>

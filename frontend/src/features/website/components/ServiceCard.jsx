@@ -12,10 +12,13 @@ export const duration = (hours) => {
 export default function ServiceCard({ service, index }) {
   return (
     <article className="service">
-      <div className="sicon"><Icon name={SERVICE_ICONS[index % SERVICE_ICONS.length]} size={26} /></div>
+      <small className="kicker">Service and repairs</small>
       <h3>{service.name}</h3>
-      <p>{service.description || ""}</p>
-      <Link className="more" to={`/services#service-${service.service_id}`}>See more <Icon name="arrow" size={15} stroke={2.5} /></Link>
+      {service.description && <p>{service.description}</p>}
+      <div className="service-foot">
+        <Link className="more" to={`/services#service-${service.service_id}`}>Read more +</Link>
+        <span className="sicon"><Icon name={SERVICE_ICONS[index % SERVICE_ICONS.length]} size={44} stroke={1.2} /></span>
+      </div>
     </article>
   );
 }

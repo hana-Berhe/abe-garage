@@ -25,11 +25,12 @@ export default function Contact() {
 
   return (
     <>
-      <PageHero crumb="Contact" eyebrow="Contact" title={<>Call us, or<br /><em>drop in.</em></>}>
+      <PageHero crumb="Contact us" title="Contact us">
         <p>There is no online booking. Call us and tell us what the car is doing, and we agree a price and a time that suits you.</p>
       </PageHero>
 
-      <section className="section on-light" style={{ paddingTop: 64 }}>
+      <section className="section" style={{ paddingTop: 64 }}>
+        <div className="wrap shead"><h2 className="h2">Our address</h2><p className="lead">Call us, or just drive in during opening hours.</p></div>
         <div className="wrap icards">
           {g.phone && <InfoCard icon="phone" label="Call us" value={g.phone} href={telHref(g.phone)} note="Fastest way to reach us" />}
           {g.address && <InfoCard icon="pin" label="Visit" value={g.address} note="Walk-ins welcome" />}

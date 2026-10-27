@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useMemo, useState } from "react";
-import { useNavigate, useSearchParams } from "react-router-dom";
+import { Link, useNavigate, useSearchParams } from "react-router-dom";
 import customerService from "../../customers/customer.api";
 import serviceService from "../../services/service.api";
 import orderService from "../order.api";
@@ -9,6 +9,7 @@ import Alert from "../../../shared/components/Alert";
 import Totals from "../../../shared/components/Totals";
 import { previewTotals } from "../../../shared/lib/money";
 import { money } from "../../../shared/lib/format";
+import Icon from "../../../shared/components/Icon";
 
 const STEPS = ["Customer", "Car", "Services", "Notes and date"];
 const VAT_PREVIEW = 15; // preview only; the server uses the rate in settings
@@ -96,11 +97,11 @@ export default function NewOrder() {
 
   return (
     <>
-      <h1 className="page-title">New order</h1>
-      <ol className="d-flex gap-2 flex-wrap list-unstyled mb-4" aria-label="Steps">
+      <h1 className="page-title">Create a new order</h1>
+      <ol className="steps-bar" aria-label="Steps">
         {STEPS.map((s, i) => (
           <li key={s}>
-            <button type="button" className={`btn btn-sm ${i === step ? "btn-ink" : "btn-outline-secondary"}`} disabled={i > step}
+            <button type="button" className={i < step ? "done" : undefined} disabled={i > step}
               onClick={() => setStep(i)} aria-current={i === step ? "step" : undefined}>
               {i + 1}. {s}
             </button>
@@ -111,10 +112,28 @@ export default function NewOrder() {
       <Alert>{error && (stepOf(error.field) !== step || error.field.startsWith("lines")) ? error.message : null}</Alert>
       <div className="row g-4">
         <div className="col-lg-8">
+          {customer && step > 0 && (
+            <div className="picked">
+              <h3>{customer.first_name} {customer.last_name}</h3>
+              <div className="kv-line">Phone number: <span>{customer.phone}</span></div>
+              {customer.email && <div className="kv-line">Email: <span>{customer.email}</span></div>}
+              <button type="button" className="unpick" aria-label="Choose another customer" title="Choose another customer" onClick={() => setStep(0)}><Icon name="x" size={18} stroke={3} /></button>
+            </div>
+          )}
+          {car && step > 1 && (
+            <div className="picked">
+              <h3>{car.make} {car.model}</h3>
+              <div className="kv-line">Plate: <span>{car.plate}</span></div>
+              {car.year && <div className="kv-line">Year: <span>{car.year}</span></div>}
+              {mileage !== "" && <div className="kv-line">Mileage today: <span>{mileage} km</span></div>}
+              <button type="button" className="unpick" aria-label="Choose another car" title="Choose another car" onClick={() => setStep(1)}><Icon name="x" size={18} stroke={3} /></button>
+            </div>
+          )}
           {step === 0 && (
             <div className="ag-card">
               <h2 className="h4">Who is the customer?</h2>
-              <SearchBox value={search} onSearch={onSearch} placeholder="Name, phone, email or plate" />
+              <SearchBox value={search} onSearch={onSearch} placeholder="Search for a customer by first name, last name, email, phone or plate" />
+              <Link to="/admin/customer/new" className="btn btn-brand mt-3">Add new customer</Link>
               <div className="list-group mt-3">
                 {customers?.rows.map((c) => (
                   <button type="button" key={c.customer_id} className="list-group-item list-group-item-action d-flex justify-content-between" onClick={() => chooseCustomer(c)}>
@@ -130,12 +149,12 @@ export default function NewOrder() {
             <div className="ag-card">
               <h2 className="h4">Which car?</h2>
               {customer.vehicles.length === 0 && <p className="muted">This customer has no car yet. Add one on their profile.</p>}
-              <div className="list-group mb-3">
+              <div className="pick-list mb-3">
                 {customer.vehicles.map((v) => (
-                  <label key={v.vehicle_id} className="list-group-item d-flex gap-3 align-items-center">
-                    <input type="radio" className="form-check-input m-0" name="vehicle" checked={vehicleId === v.vehicle_id}
+                  <label key={v.vehicle_id} className={`pick-row${vehicleId === v.vehicle_id ? " on" : ""}`}>
+                    <input type="radio" className="form-check-input" name="vehicle" checked={vehicleId === v.vehicle_id}
                       onChange={() => { setVehicleId(v.vehicle_id); setMileage(v.mileage ?? ""); }} />
-                    <span className="flex-grow-1">{v.year} {v.make} {v.model}</span>
+                    <span className="grow"><b>{v.year} {v.make} {v.model}</b><small>{[v.color, v.mileage != null && `${v.mileage} km`].filter(Boolean).join(" · ")}</small></span>
                     <span className="plate">{v.plate}</span>
                   </label>
                 ))}
@@ -146,15 +165,15 @@ export default function NewOrder() {
           )}
           {step === 2 && (
             <div className="ag-card">
-              <h2 className="h4">Jobs</h2>
+              <h2 className="h4">Choose services</h2>
               <p className="muted small">Prices fill in from the price list. Type a price only to change it for this order.</p>
-              <div className="list-group mb-3">
+              <div className="pick-list mb-4">
                 {services.map((s) => {
                   const on = s.service_id in picked;
                   return (
-                    <div key={s.service_id} className="list-group-item d-flex gap-3 align-items-center flex-wrap">
-                      <input id={`svc-${s.service_id}`} type="checkbox" className="form-check-input m-0" checked={on} onChange={() => toggle(s)} />
-                      <label htmlFor={`svc-${s.service_id}`} className="flex-grow-1">{s.name} <span className="muted small">· about {Number(s.labor_hours)} h</span></label>
+                    <div key={s.service_id} className={`pick-row${on ? " on" : ""}`}>
+                      <input id={`svc-${s.service_id}`} type="checkbox" className="form-check-input" checked={on} onChange={() => toggle(s)} />
+                      <label htmlFor={`svc-${s.service_id}`} className="grow"><b>{s.name}</b><small>{s.description ? `${s.description} · ` : ""}about {Number(s.labor_hours)} h</small></label>
                       {on ? (
                         <input type="number" step="0.01" min="0" className="form-control" style={{ width: 130 }} aria-label={`Price for ${s.name}`}
                           placeholder={s.price} value={picked[s.service_id]} onChange={(e) => setPicked({ ...picked, [s.service_id]: e.target.value })} />

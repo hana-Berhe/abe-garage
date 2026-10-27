@@ -37,7 +37,7 @@ export default function Login() {
   return (
     <AuthShell>
       <form className="form" onSubmit={submit} noValidate>
-        <h3>Sign in</h3>
+        <h3>Login to your account</h3>
         <p className="sub">Use the email your admin set up for you.</p>
         {location.state?.message && <div className="alert-info" role="status">{location.state.message}</div>}
         <div className="fields" style={{ gridTemplateColumns: "1fr", marginTop: 16 }}>
@@ -54,8 +54,8 @@ export default function Login() {
         </div>
         <p style={{ textAlign: "right", margin: "10px 0 0", fontSize: 14 }}><Link to="/forgot-password">Forgot password?</Link></p>
         {error && !error.field && <div className="alert-bad" role="alert">{error.message}</div>}
-        <button type="submit" className="btn primary" style={{ width: "100%", marginTop: 22 }} disabled={busy}>
-          {busy ? "Signing in…" : <>Sign in <Icon name="arrow" size={16} stroke={2.5} /></>}
+        <button type="submit" className="btn primary" style={{ marginTop: 22 }} disabled={busy}>
+          {busy ? "Logging in…" : "Login"}
         </button>
         <p className="note"><Icon name="info" size={16} /><span>Customers do not need an account: they follow their car from the private link we email them.</span></p>
       </form>
