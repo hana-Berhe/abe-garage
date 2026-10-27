@@ -51,7 +51,7 @@ test("every staff address needs a login (401)", async () => {
   for (const [method, path] of ROUTES) {
     const r = await api(method, path, null, method === "GET" ? undefined : {});
     assert.equal(r.code, 401, `${method} ${path}`);
-    assert.equal(r.status, "fail");
+    assert.equal(r.status, "error");
   }
 });
 
@@ -80,7 +80,11 @@ test("bad, expired and forged tokens get 401", async () => {
 test("the role comes from the database, not the token", async () => {
   const [me] = await sql("SELECT employee_id, token_version FROM employees WHERE email = 'tech@test.local'");
   // A correctly signed token that claims Admin for a technician still only gets technician rights.
-  const claimsAdmin = jwt.sign({ employee_id: me.employee_id, role_id: 3, token_version: me.token_version, name: "x" }, process.env.JWT_SECRET);
+  const claimsAdmin = jwt.sign(
+    { employee_id: me.employee_id, role_id: 3, token_version: me.token_version, token_use: "access", name: "x" },
+    process.env.JWT_SECRET,
+    { issuer: "abe-garage-api", audience: "abe-garage-web", expiresIn: 600 }
+  );
   assert.equal((await api("GET", "/api/settings", claimsAdmin)).code, 403);
 });
 

@@ -23,8 +23,8 @@ async function getOrderStatus(hash) {
   if (!rows[0]) throw notFound;
   const order = rows[0];
   const [lines] = await pool.query(
-    `SELECT COALESCE(s.name, l.description) AS name, l.line_status, l.done_at
-     FROM order_lines l LEFT JOIN services s ON s.service_id = l.service_id
+    `SELECT l.service_name AS name, l.line_status, l.done_at
+     FROM order_lines l
      WHERE l.order_id = ? ORDER BY l.line_id`,
     [order.order_id]
   );

@@ -4,6 +4,7 @@ import employeeService from "../employee.api";
 import Field from "../../../shared/components/Field";
 import Alert from "../../../shared/components/Alert";
 import { ROLE_NAMES } from "../../../shared/constants/roles";
+import { pick } from "../../../shared/lib/pick";
 
 // Shown until the server list arrives, so the form never waits on it.
 const FALLBACK_ROLES = Object.entries(ROLE_NAMES).map(([role_id, role_name]) => ({ role_id: Number(role_id), role_name }));
@@ -27,7 +28,7 @@ export default function EmployeeForm() {
     if (!editing) return;
     employeeService
       .get(id)
-      .then((e) => setForm({ ...e, phone: e.phone || "", role_id: String(e.role_id), password: "" }))
+      .then((e) => setForm({ ...e, phone: e.phone || "", role_id: String(e.role_id) }))
       .catch(setError);
   }, [id, editing]);
 
@@ -40,8 +41,9 @@ export default function EmployeeForm() {
     e.preventDefault();
     setBusy(true);
     setError(null);
-    const body = { ...form, role_id: Number(form.role_id) };
-    if (editing && !body.password) delete body.password;
+    // BE-012: an edit never sends a password; a forgotten one is changed with the reset email.
+    const keys = ["email", "first_name", "last_name", "phone", "role_id", "active", editing ? "updated_at" : "password"];
+    const body = pick({ ...form, role_id: Number(form.role_id) }, keys);
     try {
       if (editing) await employeeService.update(id, body);
       else await employeeService.create(body);
@@ -76,11 +78,12 @@ export default function EmployeeForm() {
             <option key={r.role_id} value={String(r.role_id)}>{r.role_name}</option>
           ))}
         </Field>
-        <Field
-          label={editing ? "New password (leave empty to keep the current one)" : "Password (at least 8 characters)"}
-          name="password" type="password" autoComplete="new-password" value={form.password} onChange={change}
-          error={fieldError("password")}
-        />
+        {editing ? (
+          <p className="text-muted small">To change this person's password, they use <strong>Forgot password</strong> on the login page.</p>
+        ) : (
+          <Field label="Password (at least 8 characters)" name="password" type="password" autoComplete="new-password"
+            value={form.password} onChange={change} error={fieldError("password")} />
+        )}
         <div className="form-check mb-3">
           <input id="f-active" className="form-check-input" type="checkbox" name="active" checked={!!form.active} onChange={change} />
           <label htmlFor="f-active" className="form-check-label">Active (can log in and get jobs)</label>

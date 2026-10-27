@@ -1,6 +1,7 @@
 const { ok, created, badField } = require("../../shared/respond");
 const { readMoney } = require("../services/service.validator");
 const v = require("../../shared/validate");
+const { localToday } = require("../../shared/time");
 
 const DATE_RE = /^\d{4}-\d{2}-\d{2}$/;
 
@@ -37,6 +38,11 @@ function readLines(body, { allowEmpty = false } = {}) {
   return body.lines.map((l, i) => readLine(l, `lines.${i}`));
 }
 
+// BE-029: a ready date can't be in the past (today in the garage's time zone is fine).
+function checkReadyDate(date) {
+  if (date && date < localToday()) throw badField("estimated_ready_date", "The ready date can't be in the past");
+}
+
 function readNotes(body) {
   return {
     estimated_ready_date: readDate(body, "estimated_ready_date", "Ready date"),
@@ -45,4 +51,4 @@ function readNotes(body) {
   };
 }
 
-module.exports = { readDate, readLine, readLines, readNotes };
+module.exports = { readDate, readLine, readLines, readNotes, checkReadyDate };

@@ -5,6 +5,7 @@ const mysql = require("mysql2/promise");
 const bcrypt = require("bcrypt");
 const { pool } = require("../../config/db");
 const { ApiError } = require("../../shared/respond");
+const { listMigrations, markApplied } = require("../../../db/migrator");
 
 const SCHEMA_FILE = path.join(__dirname, "..", "..", "..", "db", "schema.sql");
 
@@ -66,6 +67,8 @@ async function installLocked() {
   });
   try {
     await conn.query(fs.readFileSync(SCHEMA_FILE, "utf8"));
+    // schema.sql already holds every change file, so they are recorded as done (BE-002).
+    await markApplied(conn, listMigrations());
   } finally {
     await conn.end();
   }

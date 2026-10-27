@@ -14,12 +14,15 @@ export function setUnauthorizedHandler(fn) {
 }
 
 // Error thrown for any non-2xx answer. `field` points the form at the wrong input.
+// A field error comes as data.errors { field: message } (BE-003); the first one is shown under its input.
 export class ApiError extends Error {
   constructor(httpStatus, message, data) {
-    super(message);
+    const errors = data && data.errors;
+    const field = errors ? Object.keys(errors)[0] : undefined;
+    super(field ? errors[field] : message);
     this.httpStatus = httpStatus;
     this.data = data;
-    this.field = data && data.field;
+    this.field = field;
   }
 }
 
@@ -32,7 +35,7 @@ export async function fetchApi(path, { method = "GET", body, query } = {}) {
   }
   const headers = { "Content-Type": "application/json" };
   const token = tokenStore.get();
-  if (token) headers["x-access-token"] = token;
+  if (token) headers.Authorization = `Bearer ${token}`;
 
   let res;
   try {

@@ -1,20 +1,20 @@
-const jwt = require("jsonwebtoken");
 const { pool } = require("../config/db");
 const { ApiError } = require("../shared/respond");
+const { verifyAccessToken, readToken } = require("../shared/tokens");
 
 const ROLES = { TECHNICIAN: 1, MANAGER: 2, ADMIN: 3 };
 
 const sessionEnded = () => new ApiError(401, "Your session has ended, please log in again");
 
-// 401 when the x-access-token header is missing or expired.
+// 401 when the login token is missing, expired or not one of ours (BE-004).
 // The account is read again on every request, so a switched-off or changed account stops working at once:
 // a role change, switch-off or password change bumps token_version and old tokens no longer match (BE-003).
 async function verifyToken(req, res, next) {
-  const token = req.headers["x-access-token"];
+  const token = readToken(req);
   if (!token) return next(new ApiError(401, "Please log in"));
   let payload;
   try {
-    payload = jwt.verify(token, process.env.JWT_SECRET);
+    payload = verifyAccessToken(token);
   } catch {
     return next(sessionEnded());
   }

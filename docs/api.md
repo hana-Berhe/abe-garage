@@ -2,13 +2,15 @@
 
 Addresses and methods follow the team's backend task list (BE-001 to BE-050). Each row names its task.
 
-Every answer is JSON shaped `{ status, message, data }`. Staff endpoints need the `x-access-token` header from login.
+Every answer is JSON shaped `{ status, message, data }`, with `status` either `success` or `error`. Staff endpoints need the header `Authorization: Bearer <access_token>` from login (the older `x-access-token: <access_token>` header still works).
 Roles: **T** Technician, **M** Manager, **A** Admin. Lists take `?page=&search=` and return 10 rows plus a total.
 
 `PATCH` edits change only the fields you send; fields left out keep their saved value. Send at least one editable field,
 plus the `updated_at` you loaded so a stale edit is refused with 409.
 
-Errors: 400 wrong input (with `data.field`), 401 not logged in, expired or signed out, 403 wrong role or account switched off, 404 not found, 409 duplicate, stale edit or already paid, 429 too many login or reset attempts (with `Retry-After`), 500 server error.
+Each address accepts only the fields it reads; any other field is refused with 400 and named in the answer.
+
+Errors: 400 wrong input (`message: "Validation failed"`, `data: { errors: { <field>: <message> } }`), 401 not logged in, expired or signed out, 403 wrong role or account switched off, 404 not found, 409 duplicate, stale edit or already paid, 429 too many login or reset attempts (with `Retry-After`), 500 server error.
 
 The account is checked on every request. A role change, a switch-off or a new password signs that person out everywhere at once.
 
@@ -16,7 +18,7 @@ The account is checked on every request. A role change, a switch-off or a new pa
 | --- | --- | --- | --- | --- |
 | POST | `/api/install` | Create tables, roles, settings and the first admin; 201. Needs `INSTALL_ENABLED=true` (else 404) and an `X-Setup-Key` header equal to `INSTALL_SECRET` (else 403). 403 once installed | Setup | BE-047 |
 | GET | `/api/health` | 200 `{ service, ready: true }` when the database answers within 2 seconds and setup has run; otherwise 503 `{ ready: false }` | Public | BE-048 |
-| POST | `/api/auth/login` | Log in. 5 wrong passwords for one email (or 30 tries from one address) in 15 minutes gives 429 | Public | BE-004 |
+| POST | `/api/auth/login` | Log in with `{ email, password }`. Answers `{ access_token, token_type: "Bearer", expires_in: 3600, employee }`. The token lasts `JWT_EXPIRES_IN_SECONDS` (1 hour by default) and names `JWT_ISSUER` and `JWT_AUDIENCE`, which are checked on every request. 5 wrong passwords for one email (or 30 tries from one address) in 15 minutes gives 429 | Public | BE-004 |
 | POST | `/api/auth/forgot-password` | `{ email }`. Always the same 200 answer; an active account gets an email with a one-time link to `/reset-password?token=…` that lasts 15 minutes. 3 per email and 10 per address in 15 minutes | Public | BE-005 |
 | POST | `/api/auth/reset-password` | `{ token, new_password }`. Sets the new password, uses up the link and signs out every session. A missing, used or expired link (or a switched-off account) gives 400. 10 tries per address in 15 minutes | Public | BE-006 |
 | GET | `/api/profile` | My own current details from the database (no password hash or token version) | T, M, A | BE-008 |
@@ -24,7 +26,7 @@ The account is checked on every request. A role change, a switch-off or a new pa
 | POST | `/api/employees` | Add staff | A | BE-009 |
 | GET | `/api/employees` | List staff (`?role=&active=`); managers get active technicians only | M, A | BE-010 |
 | GET | `/api/employees/:employee_id` | View staff | A | BE-011 |
-| PATCH | `/api/employees/:employee_id` | Edit or switch off staff; 409 if it would leave no active admin | A | BE-012 |
+| PATCH | `/api/employees/:employee_id` | Edit or switch off staff; 409 if it would leave no active admin. No password here (400): the person uses Forgot password. A new email cancels reset links sent to the old one | A | BE-012 |
 | GET | `/api/roles` | The three fixed roles, `{ roles: [{ role_id, role_name }] }`, for the employee form | A | BE-013 |
 | GET | `/api/settings` | Garage details, VAT rate, opening and closing time | A | BE-014 |
 | PATCH | `/api/settings` | Change garage settings | A | BE-015 |
@@ -42,14 +44,14 @@ The account is checked on every request. A role change, a switch-off or a new pa
 | GET | `/api/services` | All services, including inactive | T, M, A | BE-026 |
 | PATCH | `/api/services/:service_id` | Edit or deactivate a service | A | BE-027 |
 | GET | `/api/public/services` | Active services, without prices (prices are for signed-in staff only) | Public | BE-028 |
-| POST | `/api/orders` | Create an order (Awaiting approval) and email the status link | M, A | BE-029 |
+| POST | `/api/orders` | Create an order (Awaiting approval) and email the status link. Each job keeps a copy of the service's name, description and hours, so a later rename doesn't change it. The ready date can't be in the past | M, A | BE-029 |
 | GET | `/api/orders` | List (`?status=&paid=&search=`) | T, M, A | BE-030 |
 | GET | `/api/orders/:order_id` | Order detail. Technicians get it without the customer's email and phone, the internal note and the status link code | T, M, A | BE-031 |
 | GET | `/api/orders/:order_id/estimate` | Printable estimate `EST-<order_id>`: garage, customer, car, jobs with their saved prices, totals, customer note. No internal or technician notes, status link code or history. Changes nothing | M, A | BE-039 |
 | PATCH | `/api/orders/:order_id` | Edit notes and date, and jobs while Awaiting approval (an empty `lines` removes every unstarted job when started jobs remain; send each job's `line_id` and it keeps its number and technician) | M, A | BE-032 |
 | PATCH | `/api/orders/:order_id/approval` | Record approve or decline (`decision`, `method`); approval sets Approved, In progress or Completed from the jobs | M, A | BE-033 |
 | POST | `/api/orders/:order_id/lines` | Add extra work; the order goes back to Awaiting approval | M, A | BE-034 |
-| PATCH | `/api/order-lines/:line_id/technician` | Assign a technician | M, A | BE-035 |
+| PATCH | `/api/order-lines/:line_id/technician` | `{ technician_id }`: assign a job, or move it to another active technician, even once started (it keeps its progress; the history notes old → new). No un-assigning; a done job can't move | M, A | BE-035 |
 | GET | `/api/my-jobs` | Jobs of the logged-in technician (no internal notes) | T | BE-036 |
 | PATCH | `/api/order-lines/:line_id/status` | Start (1) or finish (2) a job, or save a work note | own T, M, A | BE-037, BE-038 |
 | PATCH | `/api/order-lines/:line_id/note` | `{ technician_note }` (up to 2000 characters). Only once the order is approved (409 before, and on a declined order); written to the history | own T, M, A | BE-038 |

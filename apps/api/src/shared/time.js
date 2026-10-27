@@ -29,4 +29,10 @@ function periodStarts(now = new Date(), timeZone = ZONE()) {
   return { today, week, month };
 }
 
-module.exports = { periodStarts };
+// Today's date in the garage's time zone, as "YYYY-MM-DD".
+function localToday(now = new Date(), timeZone = ZONE()) {
+  const p = zoneParts(now, timeZone);
+  return `${p.y}-${String(p.m).padStart(2, "0")}-${String(p.d).padStart(2, "0")}`;
+}
+
+module.exports = { periodStarts, localToday };

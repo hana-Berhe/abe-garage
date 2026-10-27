@@ -5,6 +5,7 @@ import Field from "../../../shared/components/Field";
 import Alert from "../../../shared/components/Alert";
 import { ActiveBadge } from "../../../shared/components/StatusBadge";
 import { money } from "../../../shared/lib/format";
+import { pick } from "../../../shared/lib/pick";
 
 const EMPTY = { name: "", description: "", price: "", labor_hours: "", active: 1 };
 
@@ -33,8 +34,9 @@ export default function ServiceList() {
     setBusy(true);
     setFormError(null);
     try {
-      if (form.service_id) await serviceService.update(form.service_id, form);
-      else await serviceService.create(form);
+      const body = pick(form, ["name", "description", "price", "labor_hours", "active"]);
+      if (form.service_id) await serviceService.update(form.service_id, { ...body, updated_at: form.updated_at });
+      else await serviceService.create(body);
       setForm(null);
       load();
     } catch (err) {

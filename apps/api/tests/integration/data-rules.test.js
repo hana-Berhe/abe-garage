@@ -1,25 +1,25 @@
 // BE-049 (3): duplicates, bad input, a car that isn't the customer's, stale edits and roll-back.
 const { test } = require("node:test");
 const assert = require("node:assert/strict");
-const { useApp, api, sql, newCustomer } = require("./helpers");
+const { useApp, api, sql, newCustomer, errorField } = require("./helpers");
 
 const f = useApp();
 
 test("duplicate staff email, customer email/phone and car plate get 409 with the field", async () => {
   const staff = await api("POST", "/api/employees", f.admin, { email: "manager@test.local", first_name: "A", last_name: "B", password: "Password123", role_id: 1 });
   assert.equal(staff.code, 409);
-  assert.equal(staff.data.field, "email");
+  assert.equal(errorField(staff), "email");
 
   const { customer, vehicle } = await newCustomer(f.manager);
   const sameEmail = await api("POST", "/api/customers", f.manager, { first_name: "X", last_name: "Y", email: customer.email, phone: "0999000001" });
   assert.equal(sameEmail.code, 409);
-  assert.equal(sameEmail.data.field, "email");
+  assert.equal(errorField(sameEmail), "email");
   const samePhone = await api("POST", "/api/customers", f.manager, { first_name: "X", last_name: "Y", email: "other@example.com", phone: customer.phone });
   assert.equal(samePhone.code, 409);
-  assert.equal(samePhone.data.field, "phone");
+  assert.equal(errorField(samePhone), "phone");
   const samePlate = await api("POST", "/api/vehicles", f.manager, { customer_id: customer.customer_id, make: "Kia", model: "Rio", plate: vehicle.plate });
   assert.equal(samePlate.code, 409);
-  assert.equal(samePlate.data.field, "plate");
+  assert.equal(errorField(samePlate), "plate");
 });
 
 test("bad input gets 400 and names the field", async () => {
@@ -34,8 +34,8 @@ test("bad input gets 400 and names the field", async () => {
   for (const [method, path, token, body, field] of cases) {
     const r = await api(method, path, token, body);
     assert.equal(r.code, 400, `${path} ${field}`);
-    assert.equal(r.status, "fail");
-    assert.equal(r.data.field, field, `${path} ${field}`);
+    assert.equal(r.status, "error");
+    assert.equal(errorField(r), field, `${path} ${field}`);
   }
   const settings = (await api("GET", "/api/settings", f.admin)).data;
   const vat = await api("PATCH", "/api/settings", f.admin, { vat_rate: "101", updated_at: settings.updated_at });

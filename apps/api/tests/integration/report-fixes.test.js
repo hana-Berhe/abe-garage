@@ -2,7 +2,7 @@
 // car rules, health, setup key, status page and resend limits, login timing and length, safety headers.
 const { test } = require("node:test");
 const assert = require("node:assert/strict");
-const { useApp, api, sql, login, newCustomer, newOrder } = require("./helpers");
+const { useApp, api, sql, login, newCustomer, newOrder, errorField } = require("./helpers");
 
 const f = useApp();
 
@@ -52,7 +52,7 @@ test("a line_id that is not an unstarted job of this order is refused and nothin
     updated_at: order.updated_at,
   });
   assert.equal(r.code, 400);
-  assert.equal(r.data.field, "lines.0.line_id");
+  assert.equal(errorField(r), "lines.0.line_id");
   const [line] = await sql("SELECT line_price FROM order_lines WHERE order_id = ?", [order.order_id]);
   assert.equal(line.line_price, "50.00");
 });
@@ -85,7 +85,7 @@ test("mileage can't go down, on the car or with a new order (BE-023)", async () 
   const { customer, vehicle } = await newCustomer(f.manager);
   const lower = await api("PATCH", `/api/vehicles/${vehicle.vehicle_id}`, f.manager, { mileage: 10, updated_at: vehicle.updated_at });
   assert.equal(lower.code, 409);
-  assert.equal(lower.data.field, "mileage");
+  assert.equal(errorField(lower), "mileage");
   const higher = await api("PATCH", `/api/vehicles/${vehicle.vehicle_id}`, f.manager, { mileage: 70000, updated_at: vehicle.updated_at });
   assert.equal(higher.code, 200);
   assert.equal(higher.data.mileage, 70000);
@@ -173,15 +173,9 @@ test("an unknown email takes as long as a wrong password (BE-004)", async () => 
 });
 
 test("a login lasts 1 hour by default (BE-004)", async () => {
-  const saved = process.env.JWT_EXPIRES_IN;
-  delete process.env.JWT_EXPIRES_IN;
-  try {
-    const token = await login("tech2@test.local");
-    const payload = JSON.parse(Buffer.from(token.split(".")[1], "base64url"));
-    assert.equal(payload.exp - payload.iat, 3600);
-  } finally {
-    process.env.JWT_EXPIRES_IN = saved;
-  }
+  const token = await login("tech2@test.local");
+  const payload = JSON.parse(Buffer.from(token.split(".")[1], "base64url"));
+  assert.equal(payload.exp - payload.iat, 3600);
 });
 
 test("standard browser safety headers are set", async () => {

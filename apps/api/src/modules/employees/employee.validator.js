@@ -14,7 +14,7 @@ function readEmployee(body, { passwordRequired }) {
   if (![ROLES.TECHNICIAN, ROLES.MANAGER, ROLES.ADMIN].includes(data.role_id)) {
     throw badField("role_id", "Choose a role");
   }
-  if (passwordRequired || body.password) data.password = v.requirePassword(body);
+  if (passwordRequired) data.password = v.requirePassword(body);
   return data;
 }
 

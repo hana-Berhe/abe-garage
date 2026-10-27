@@ -43,7 +43,7 @@ async function getById(id) {
 async function getActiveByIds(conn, ids) {
   if (!ids.length) return [];
   const [rows] = await conn.query(
-    "SELECT service_id, name, price, labor_hours FROM services WHERE active = 1 AND service_id IN (?)",
+    "SELECT service_id, name, description, price, labor_hours FROM services WHERE active = 1 AND service_id IN (?)",
     [ids]
   );
   return rows;
