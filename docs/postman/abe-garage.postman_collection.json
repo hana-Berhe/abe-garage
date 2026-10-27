@@ -78,7 +78,7 @@
                 "install"
               ]
             },
-            "description": "Run once on an empty database, with setupKey set to INSTALL_SECRET from apps/api/.env and INSTALL_ENABLED=true. On an installed database it answers 403, which is expected: skip this request then."
+            "description": "Run once on an empty database, with setupKey set to INSTALL_SECRET from backend/.env and INSTALL_ENABLED=true. On an installed database it answers 403, which is expected: skip this request then."
           }
         },
         {
@@ -131,7 +131,8 @@
                 "exec": [
                   "pm.test('status 200', () => pm.response.to.have.status(200));",
                   "pm.test('{ status, message, data } shape', () => { const j = pm.response.json(); pm.expect(j).to.have.keys('status', 'message', 'data'); });",
-                  "pm.collectionVariables.set('token_admin', pm.response.json().data.token);"
+                  "pm.collectionVariables.set('token_admin', pm.response.json().data.access_token);",
+                  "pm.test('Bearer token for 1 hour', () => { const d = pm.response.json().data; pm.expect(d.token_type).to.eql('Bearer'); pm.expect(d.expires_in).to.eql(3600); });"
                 ]
               }
             }
@@ -321,8 +322,8 @@
                 "value": "application/json"
               },
               {
-                "key": "x-access-token",
-                "value": "{{token_admin}}"
+                "key": "Authorization",
+                "value": "Bearer {{token_admin}}"
               }
             ],
             "url": {
@@ -487,8 +488,8 @@
                 "value": "application/json"
               },
               {
-                "key": "x-access-token",
-                "value": "{{token_admin}}"
+                "key": "Authorization",
+                "value": "Bearer {{token_admin}}"
               }
             ],
             "url": {
@@ -527,8 +528,8 @@
                 "value": "application/json"
               },
               {
-                "key": "x-access-token",
-                "value": "{{token_admin}}"
+                "key": "Authorization",
+                "value": "Bearer {{token_admin}}"
               }
             ],
             "url": {
@@ -576,8 +577,8 @@
                 "value": "application/json"
               },
               {
-                "key": "x-access-token",
-                "value": "{{token_admin}}"
+                "key": "Authorization",
+                "value": "Bearer {{token_admin}}"
               }
             ],
             "url": {
@@ -623,8 +624,8 @@
                 "value": "application/json"
               },
               {
-                "key": "x-access-token",
-                "value": "{{token_admin}}"
+                "key": "Authorization",
+                "value": "Bearer {{token_admin}}"
               }
             ],
             "url": {
@@ -658,7 +659,7 @@
                 "exec": [
                   "pm.test('status 200', () => pm.response.to.have.status(200));",
                   "pm.test('{ status, message, data } shape', () => { const j = pm.response.json(); pm.expect(j).to.have.keys('status', 'message', 'data'); });",
-                  "pm.collectionVariables.set('token_manager', pm.response.json().data.token);"
+                  "pm.collectionVariables.set('token_manager', pm.response.json().data.access_token);"
                 ]
               }
             }
@@ -703,7 +704,7 @@
                 "exec": [
                   "pm.test('status 200', () => pm.response.to.have.status(200));",
                   "pm.test('{ status, message, data } shape', () => { const j = pm.response.json(); pm.expect(j).to.have.keys('status', 'message', 'data'); });",
-                  "pm.collectionVariables.set('token_tech', pm.response.json().data.token);"
+                  "pm.collectionVariables.set('token_tech', pm.response.json().data.access_token);"
                 ]
               }
             }
@@ -760,8 +761,8 @@
                 "value": "application/json"
               },
               {
-                "key": "x-access-token",
-                "value": "{{token_admin}}"
+                "key": "Authorization",
+                "value": "Bearer {{token_admin}}"
               }
             ],
             "url": {
@@ -798,8 +799,8 @@
                 "value": "application/json"
               },
               {
-                "key": "x-access-token",
-                "value": "{{token_tech}}"
+                "key": "Authorization",
+                "value": "Bearer {{token_tech}}"
               }
             ],
             "url": {
@@ -837,8 +838,8 @@
                 "value": "application/json"
               },
               {
-                "key": "x-access-token",
-                "value": "{{token_admin}}"
+                "key": "Authorization",
+                "value": "Bearer {{token_admin}}"
               }
             ],
             "url": {
@@ -876,8 +877,8 @@
                 "value": "application/json"
               },
               {
-                "key": "x-access-token",
-                "value": "{{token_admin}}"
+                "key": "Authorization",
+                "value": "Bearer {{token_admin}}"
               }
             ],
             "url": {
@@ -894,6 +895,55 @@
             "body": {
               "mode": "raw",
               "raw": "{\n  \"phone\": \"0911000111\",\n  \"updated_at\": \"{{techUpdatedAt}}\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          }
+        },
+        {
+          "name": "Edit employee: password not allowed here (400)",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('status 400', () => pm.response.to.have.status(400));",
+                  "pm.test('{ status, message, data } shape', () => { const j = pm.response.json(); pm.expect(j).to.have.keys('status', 'message', 'data'); });",
+                  "pm.test('points to Forgot password', () => pm.expect(pm.response.json().data.errors.password).to.include('Forgot password'));"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "PATCH",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "Authorization",
+                "value": "Bearer {{token_admin}}"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/employees/{{techId}}",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "employees",
+                "{{techId}}"
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"password\": \"NewPassword123\",\n  \"updated_at\": \"{{techUpdatedAt}}\"\n}",
               "options": {
                 "raw": {
                   "language": "json"
@@ -924,8 +974,8 @@
                 "value": "application/json"
               },
               {
-                "key": "x-access-token",
-                "value": "{{token_admin}}"
+                "key": "Authorization",
+                "value": "Bearer {{token_admin}}"
               }
             ],
             "url": {
@@ -978,8 +1028,8 @@
                 "value": "application/json"
               },
               {
-                "key": "x-access-token",
-                "value": "{{token_admin}}"
+                "key": "Authorization",
+                "value": "Bearer {{token_admin}}"
               }
             ],
             "url": {
@@ -1016,8 +1066,8 @@
                 "value": "application/json"
               },
               {
-                "key": "x-access-token",
-                "value": "{{token_admin}}"
+                "key": "Authorization",
+                "value": "Bearer {{token_admin}}"
               }
             ],
             "url": {
@@ -1063,8 +1113,8 @@
                 "value": "application/json"
               },
               {
-                "key": "x-access-token",
-                "value": "{{token_manager}}"
+                "key": "Authorization",
+                "value": "Bearer {{token_manager}}"
               }
             ],
             "url": {
@@ -1142,8 +1192,8 @@
                 "value": "application/json"
               },
               {
-                "key": "x-access-token",
-                "value": "{{token_admin}}"
+                "key": "Authorization",
+                "value": "Bearer {{token_admin}}"
               }
             ],
             "url": {
@@ -1191,8 +1241,8 @@
                 "value": "application/json"
               },
               {
-                "key": "x-access-token",
-                "value": "{{token_admin}}"
+                "key": "Authorization",
+                "value": "Bearer {{token_admin}}"
               }
             ],
             "url": {
@@ -1208,6 +1258,54 @@
             "body": {
               "mode": "raw",
               "raw": "{\n  \"name\": \"Brakes {{$timestamp}}\",\n  \"price\": \"180.00\",\n  \"labor_hours\": \"2\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          }
+        },
+        {
+          "name": "Add service: unknown field (400)",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('status 400', () => pm.response.to.have.status(400));",
+                  "pm.test('{ status, message, data } shape', () => { const j = pm.response.json(); pm.expect(j).to.have.keys('status', 'message', 'data'); });",
+                  "pm.test('names the field', () => pm.expect(pm.response.json().data.errors).to.eql({ colour: 'Unknown field' }));"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "Authorization",
+                "value": "Bearer {{token_admin}}"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/services",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "services"
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"name\": \"Wash\",\n  \"price\": \"10.00\",\n  \"colour\": \"red\"\n}",
               "options": {
                 "raw": {
                   "language": "json"
@@ -1238,8 +1336,8 @@
                 "value": "application/json"
               },
               {
-                "key": "x-access-token",
-                "value": "{{token_admin}}"
+                "key": "Authorization",
+                "value": "Bearer {{token_admin}}"
               }
             ],
             "url": {
@@ -1285,8 +1383,8 @@
                 "value": "application/json"
               },
               {
-                "key": "x-access-token",
-                "value": "{{token_tech}}"
+                "key": "Authorization",
+                "value": "Bearer {{token_tech}}"
               }
             ],
             "url": {
@@ -1366,8 +1464,8 @@
                 "value": "application/json"
               },
               {
-                "key": "x-access-token",
-                "value": "{{token_manager}}"
+                "key": "Authorization",
+                "value": "Bearer {{token_manager}}"
               }
             ],
             "url": {
@@ -1413,8 +1511,8 @@
                 "value": "application/json"
               },
               {
-                "key": "x-access-token",
-                "value": "{{token_manager}}"
+                "key": "Authorization",
+                "value": "Bearer {{token_manager}}"
               }
             ],
             "url": {
@@ -1460,8 +1558,8 @@
                 "value": "application/json"
               },
               {
-                "key": "x-access-token",
-                "value": "{{token_manager}}"
+                "key": "Authorization",
+                "value": "Bearer {{token_manager}}"
               }
             ],
             "url": {
@@ -1504,8 +1602,8 @@
                 "value": "application/json"
               },
               {
-                "key": "x-access-token",
-                "value": "{{token_manager}}"
+                "key": "Authorization",
+                "value": "Bearer {{token_manager}}"
               }
             ],
             "url": {
@@ -1544,8 +1642,8 @@
                 "value": "application/json"
               },
               {
-                "key": "x-access-token",
-                "value": "{{token_manager}}"
+                "key": "Authorization",
+                "value": "Bearer {{token_manager}}"
               }
             ],
             "url": {
@@ -1584,8 +1682,8 @@
                 "value": "application/json"
               },
               {
-                "key": "x-access-token",
-                "value": "{{token_manager}}"
+                "key": "Authorization",
+                "value": "Bearer {{token_manager}}"
               }
             ],
             "url": {
@@ -1631,8 +1729,8 @@
                 "value": "application/json"
               },
               {
-                "key": "x-access-token",
-                "value": "{{token_tech}}"
+                "key": "Authorization",
+                "value": "Bearer {{token_tech}}"
               }
             ],
             "url": {
@@ -1653,6 +1751,54 @@
     {
       "name": "6 Orders and jobs (BE-029..038)",
       "item": [
+        {
+          "name": "New order: ready date in the past (400)",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('status 400', () => pm.response.to.have.status(400));",
+                  "pm.test('{ status, message, data } shape', () => { const j = pm.response.json(); pm.expect(j).to.have.keys('status', 'message', 'data'); });",
+                  "pm.test('points at the date', () => pm.expect(pm.response.json().data.errors).to.have.property('estimated_ready_date'));"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "Authorization",
+                "value": "Bearer {{token_manager}}"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/orders",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "orders"
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"customer_id\": \"{{customerId}}\",\n  \"vehicle_id\": \"{{vehicleId}}\",\n  \"lines\": [\n    {\n      \"service_id\": \"{{serviceOil}}\"\n    }\n  ],\n  \"estimated_ready_date\": \"2020-01-01\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          }
+        },
         {
           "name": "New order: 230.00 + 15% = 264.50",
           "event": [
@@ -1677,8 +1823,8 @@
                 "value": "application/json"
               },
               {
-                "key": "x-access-token",
-                "value": "{{token_manager}}"
+                "key": "Authorization",
+                "value": "Bearer {{token_manager}}"
               }
             ],
             "url": {
@@ -1724,8 +1870,8 @@
                 "value": "application/json"
               },
               {
-                "key": "x-access-token",
-                "value": "{{token_manager}}"
+                "key": "Authorization",
+                "value": "Bearer {{token_manager}}"
               }
             ],
             "url": {
@@ -1741,6 +1887,99 @@
                 {
                   "key": "status",
                   "value": "1"
+                }
+              ]
+            }
+          }
+        },
+        {
+          "name": "List orders for one customer",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('status 200', () => pm.response.to.have.status(200));",
+                  "pm.test('{ status, message, data } shape', () => { const j = pm.response.json(); pm.expect(j).to.have.keys('status', 'message', 'data'); });",
+                  "pm.test('only this customer', () => pm.response.json().data.rows.forEach((o) => pm.expect(o.customer_id).to.eql(Number(pm.collectionVariables.get('customerId')))));"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "Authorization",
+                "value": "Bearer {{token_manager}}"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/orders?customer_id={{customerId}}",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "orders"
+              ],
+              "query": [
+                {
+                  "key": "customer_id",
+                  "value": "{{customerId}}"
+                }
+              ]
+            }
+          }
+        },
+        {
+          "name": "List orders: unpaid_only with paid=true (400)",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('status 400', () => pm.response.to.have.status(400));",
+                  "pm.test('{ status, message, data } shape', () => { const j = pm.response.json(); pm.expect(j).to.have.keys('status', 'message', 'data'); });"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "Authorization",
+                "value": "Bearer {{token_manager}}"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/orders?unpaid_only=true&paid=true",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "orders"
+              ],
+              "query": [
+                {
+                  "key": "unpaid_only",
+                  "value": "true"
+                },
+                {
+                  "key": "paid",
+                  "value": "true"
                 }
               ]
             }
@@ -1771,8 +2010,8 @@
                 "value": "application/json"
               },
               {
-                "key": "x-access-token",
-                "value": "{{token_manager}}"
+                "key": "Authorization",
+                "value": "Bearer {{token_manager}}"
               }
             ],
             "url": {
@@ -1811,8 +2050,8 @@
                 "value": "application/json"
               },
               {
-                "key": "x-access-token",
-                "value": "{{token_manager}}"
+                "key": "Authorization",
+                "value": "Bearer {{token_manager}}"
               }
             ],
             "url": {
@@ -1852,8 +2091,8 @@
                 "value": "application/json"
               },
               {
-                "key": "x-access-token",
-                "value": "{{token_tech}}"
+                "key": "Authorization",
+                "value": "Bearer {{token_tech}}"
               }
             ],
             "url": {
@@ -1892,8 +2131,8 @@
                 "value": "application/json"
               },
               {
-                "key": "x-access-token",
-                "value": "{{token_manager}}"
+                "key": "Authorization",
+                "value": "Bearer {{token_manager}}"
               }
             ],
             "url": {
@@ -1942,8 +2181,8 @@
                 "value": "application/json"
               },
               {
-                "key": "x-access-token",
-                "value": "{{token_manager}}"
+                "key": "Authorization",
+                "value": "Bearer {{token_manager}}"
               }
             ],
             "url": {
@@ -1990,8 +2229,8 @@
                 "value": "application/json"
               },
               {
-                "key": "x-access-token",
-                "value": "{{token_manager}}"
+                "key": "Authorization",
+                "value": "Bearer {{token_manager}}"
               }
             ],
             "url": {
@@ -2039,8 +2278,8 @@
                 "value": "application/json"
               },
               {
-                "key": "x-access-token",
-                "value": "{{token_manager}}"
+                "key": "Authorization",
+                "value": "Bearer {{token_manager}}"
               }
             ],
             "url": {
@@ -2088,8 +2327,8 @@
                 "value": "application/json"
               },
               {
-                "key": "x-access-token",
-                "value": "{{token_manager}}"
+                "key": "Authorization",
+                "value": "Bearer {{token_manager}}"
               }
             ],
             "url": {
@@ -2137,8 +2376,8 @@
                 "value": "application/json"
               },
               {
-                "key": "x-access-token",
-                "value": "{{token_manager}}"
+                "key": "Authorization",
+                "value": "Bearer {{token_manager}}"
               }
             ],
             "url": {
@@ -2156,6 +2395,55 @@
             "body": {
               "mode": "raw",
               "raw": "{\n  \"technician_id\": \"{{techId}}\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          }
+        },
+        {
+          "name": "Un-assign job 1 (400: a job always moves to someone)",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('status 400', () => pm.response.to.have.status(400));",
+                  "pm.test('{ status, message, data } shape', () => { const j = pm.response.json(); pm.expect(j).to.have.keys('status', 'message', 'data'); });"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "PATCH",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "Authorization",
+                "value": "Bearer {{token_manager}}"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/order-lines/{{line1}}/technician",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "order-lines",
+                "{{line1}}",
+                "technician"
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"technician_id\": null\n}",
               "options": {
                 "raw": {
                   "language": "json"
@@ -2186,8 +2474,8 @@
                 "value": "application/json"
               },
               {
-                "key": "x-access-token",
-                "value": "{{token_manager}}"
+                "key": "Authorization",
+                "value": "Bearer {{token_manager}}"
               }
             ],
             "url": {
@@ -2235,8 +2523,8 @@
                 "value": "application/json"
               },
               {
-                "key": "x-access-token",
-                "value": "{{token_tech}}"
+                "key": "Authorization",
+                "value": "Bearer {{token_tech}}"
               }
             ],
             "url": {
@@ -2273,8 +2561,8 @@
                 "value": "application/json"
               },
               {
-                "key": "x-access-token",
-                "value": "{{token_tech}}"
+                "key": "Authorization",
+                "value": "Bearer {{token_tech}}"
               }
             ],
             "url": {
@@ -2322,8 +2610,8 @@
                 "value": "application/json"
               },
               {
-                "key": "x-access-token",
-                "value": "{{token_tech}}"
+                "key": "Authorization",
+                "value": "Bearer {{token_tech}}"
               }
             ],
             "url": {
@@ -2372,8 +2660,8 @@
                 "value": "application/json"
               },
               {
-                "key": "x-access-token",
-                "value": "{{token_tech}}"
+                "key": "Authorization",
+                "value": "Bearer {{token_tech}}"
               }
             ],
             "url": {
@@ -2421,8 +2709,8 @@
                 "value": "application/json"
               },
               {
-                "key": "x-access-token",
-                "value": "{{token_tech}}"
+                "key": "Authorization",
+                "value": "Bearer {{token_tech}}"
               }
             ],
             "url": {
@@ -2470,8 +2758,8 @@
                 "value": "application/json"
               },
               {
-                "key": "x-access-token",
-                "value": "{{token_manager}}"
+                "key": "Authorization",
+                "value": "Bearer {{token_manager}}"
               }
             ],
             "url": {
@@ -2511,8 +2799,8 @@
                 "value": "application/json"
               },
               {
-                "key": "x-access-token",
-                "value": "{{token_tech}}"
+                "key": "Authorization",
+                "value": "Bearer {{token_tech}}"
               }
             ],
             "url": {
@@ -2565,8 +2853,8 @@
                 "value": "application/json"
               },
               {
-                "key": "x-access-token",
-                "value": "{{token_manager}}"
+                "key": "Authorization",
+                "value": "Bearer {{token_manager}}"
               }
             ],
             "url": {
@@ -2605,8 +2893,8 @@
                 "value": "application/json"
               },
               {
-                "key": "x-access-token",
-                "value": "{{token_manager}}"
+                "key": "Authorization",
+                "value": "Bearer {{token_manager}}"
               }
             ],
             "url": {
@@ -2645,8 +2933,8 @@
                 "value": "application/json"
               },
               {
-                "key": "x-access-token",
-                "value": "{{token_manager}}"
+                "key": "Authorization",
+                "value": "Bearer {{token_manager}}"
               }
             ],
             "url": {
@@ -2660,6 +2948,55 @@
                 "{{orderId}}",
                 "invoice"
               ]
+            }
+          }
+        },
+        {
+          "name": "Record cash payment: paid false (400)",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('status 400', () => pm.response.to.have.status(400));",
+                  "pm.test('{ status, message, data } shape', () => { const j = pm.response.json(); pm.expect(j).to.have.keys('status', 'message', 'data'); });"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "PATCH",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "Authorization",
+                "value": "Bearer {{token_manager}}"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/orders/{{orderId}}/payment",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "orders",
+                "{{orderId}}",
+                "payment"
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"paid\": false\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
             }
           }
         },
@@ -2685,8 +3022,8 @@
                 "value": "application/json"
               },
               {
-                "key": "x-access-token",
-                "value": "{{token_manager}}"
+                "key": "Authorization",
+                "value": "Bearer {{token_manager}}"
               }
             ],
             "url": {
@@ -2700,6 +3037,15 @@
                 "{{orderId}}",
                 "payment"
               ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"paid\": true\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
             }
           }
         },
@@ -2725,8 +3071,8 @@
                 "value": "application/json"
               },
               {
-                "key": "x-access-token",
-                "value": "{{token_manager}}"
+                "key": "Authorization",
+                "value": "Bearer {{token_manager}}"
               }
             ],
             "url": {
@@ -2765,8 +3111,8 @@
                 "value": "application/json"
               },
               {
-                "key": "x-access-token",
-                "value": "{{token_manager}}"
+                "key": "Authorization",
+                "value": "Bearer {{token_manager}}"
               }
             ],
             "url": {
@@ -2885,8 +3231,8 @@
                 "value": "application/json"
               },
               {
-                "key": "x-access-token",
-                "value": "{{token_tech}}"
+                "key": "Authorization",
+                "value": "Bearer {{token_tech}}"
               }
             ],
             "url": {
@@ -2931,8 +3277,8 @@
                 "value": "application/json"
               },
               {
-                "key": "x-access-token",
-                "value": "{{token_manager}}"
+                "key": "Authorization",
+                "value": "Bearer {{token_manager}}"
               }
             ],
             "url": {
@@ -2969,8 +3315,8 @@
                 "value": "application/json"
               },
               {
-                "key": "x-access-token",
-                "value": "{{token_tech}}"
+                "key": "Authorization",
+                "value": "Bearer {{token_tech}}"
               }
             ],
             "url": {
@@ -3046,8 +3392,8 @@
                 "value": "application/json"
               },
               {
-                "key": "x-access-token",
-                "value": "{{token_manager}}"
+                "key": "Authorization",
+                "value": "Bearer {{token_manager}}"
               }
             ],
             "url": {
@@ -3085,8 +3431,8 @@
                 "value": "application/json"
               },
               {
-                "key": "x-access-token",
-                "value": "{{token_manager}}"
+                "key": "Authorization",
+                "value": "Bearer {{token_manager}}"
               }
             ],
             "url": {

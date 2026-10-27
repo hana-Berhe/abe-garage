@@ -1,6 +1,6 @@
 # Database
 
-MySQL 8, InnoDB, utf8mb4. The whole schema is in [`apps/api/db/schema.sql`](../apps/api/db/schema.sql) and is safe to run twice.
+MySQL 8, InnoDB, utf8mb4. The whole schema is in [`backend/db/schema.sql`](../backend/db/schema.sql) and is safe to run twice.
 
 ## Tables
 
@@ -34,24 +34,28 @@ MySQL 8, InnoDB, utf8mb4. The whole schema is in [`apps/api/db/schema.sql`](../a
 mysql -u root -p -e "CREATE DATABASE abe_garage CHARACTER SET utf8mb4;
   CREATE USER 'abe'@'localhost' IDENTIFIED BY 'change_me';
   GRANT ALL ON abe_garage.* TO 'abe'@'localhost';"
-cp apps/api/.env.example apps/api/.env      # fill in DB_* and INSTALL_ADMIN_*
+cp backend/.env.example backend/.env      # fill in DB_* and INSTALL_ADMIN_*
 npm run dev:api
 curl -X POST -H "X-Setup-Key: <INSTALL_SECRET>" http://localhost:8000/api/install  # once: tables, roles, settings, first admin
 npm run seed                                  # optional demo data
 ```
 
-An existing database needs each newer change once, in order (skip any it already has):
+An existing database gets newer changes with one command. It applies each file in `backend/db/migrations` once, in order, and records it in the `schema_migrations` table, so running it again does nothing:
 
 ```bash
-mysql -u abe -p abe_garage < apps/api/db/migrations/002_employee_token_version.sql
-mysql -u abe -p abe_garage < apps/api/db/migrations/003_permanent_invoices.sql
-mysql -u abe -p abe_garage < apps/api/db/migrations/004_drop_callback_requests.sql
-mysql -u abe -p abe_garage < apps/api/db/migrations/005_vin_optional_32.sql
-mysql -u abe -p abe_garage < apps/api/db/migrations/006_password_reset_tokens.sql
+npm --prefix backend run migrate
+```
+
+A fresh install records every file as done, because `schema.sql` already has them all. If you ran some files by hand before this command existed, say which was the last one, and the command records those as done and applies only the rest (for example, when you last ran `006`):
+
+```bash
+npm --prefix backend run migrate -- --already=006
 ```
 
 After `003`, orders that were already paid have no saved invoice. A manager can issue it from the order's invoice page.
 
 `004` removes the old `callback_requests` table from the website call-back form, which no longer exists. It deletes any saved requests, so back them up first if you want to keep them (the file shows how). A database that never had the table can skip it.
+
+`007` copies each job's name, description and hours onto the order, taken from the service list as it is when you run it. From then on, renaming a service doesn't change existing orders.
 
 `POST /api/install` locks itself once any staff account exists (it then answers 403). It only works while `INSTALL_ENABLED=true` and with the `X-Setup-Key` header set to `INSTALL_SECRET` (16 characters or more). Set `INSTALL_ENABLED=false` on a live server once setup is done.

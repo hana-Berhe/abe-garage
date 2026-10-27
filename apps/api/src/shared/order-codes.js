@@ -1,6 +1,0 @@
-// Status codes (PRD section 3 and 6).
-const ORDER_STATUS = { AWAITING_APPROVAL: 1, APPROVED: 2, IN_PROGRESS: 3, COMPLETED: 4, DECLINED: 5 };
-const LINE_STATUS = { NOT_STARTED: 0, STARTED: 1, DONE: 2 };
-const APPROVAL_METHODS = ["in_person", "phone"];
-
-module.exports = { ORDER_STATUS, LINE_STATUS, APPROVAL_METHODS };
