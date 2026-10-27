@@ -22,14 +22,15 @@ backend/
 │   │   └── db.js              MySQL pool and withTransaction()
 │   ├── middlewares/
 │   │   ├── auth.js            verifyToken, hasRole([...]), ROLES
+│   │   ├── validate.js        runs a route's express-validator rules, answers 400 with { errors }
 │   │   └── error-handler.js   every error becomes { status, message, data }
 │   ├── api/                   one folder per feature
 │   │   └── <feature>/
 │   │       ├── routes/<name>.routes.js            URL + middleware only
 │   │       ├── controller/<name>.controller.js    reads the request, calls the service, answers
-│   │       ├── validations/<name>.validation.js   checks input, 400 with the field name
+│   │       ├── validations/<name>.validation.js   express-validator rules for each route's input
 │   │       └── service/<name>.service.js          business rules and SQL (? placeholders only)
-│   └── shared/                money, mailer, pagination, responses, validation helpers
+│   └── shared/                money, mailer, pagination, responses, rules.js (shared express-validator rule builders)
 ├── db/
 │   ├── schema.sql             the 10 tables (only Member 1 changes it)
 │   ├── migrations/            numbered change files, applied by `npm run migrate`
@@ -71,7 +72,7 @@ Pages never call `fetch` and never hold business rules. Money shown before savin
 | --- | --- |
 | Login | bcrypt check (also for unknown emails, so both take as long), then a JWT valid 1 hour holding id, role, name and token version |
 | Roles | `hasRole([...])` on every staff route; the server check is the real one |
-| Input | checked in the feature's validation file; 400 with `{ field }` so the form shows it under the right input |
+| Input | express-validator rules in the feature's validation file, run by `validate(rules)` in the route; 400 `Validation failed` with `{ errors: { field: message } }`, so the form shows the first one under the right input |
 | Answers | `{ status, message, data }` with the right HTTP code |
 | Multi-table saves | one transaction (`withTransaction`) |
 | Money | `shared/money.js` only; DECIMAL(10,2); VAT added on top of the subtotal |

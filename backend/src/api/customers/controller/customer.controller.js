@@ -1,17 +1,15 @@
 import * as customerService from "../service/customer.service.js";
 import { ok, created } from "../../../shared/respond.js";
 import { readPage } from "../../../shared/pagination.js";
-import { readUpdatedAt } from "../../../shared/stale-check.js";
-import { readVehicle } from "../../vehicles/validations/vehicle.validation.js";
-import * as v from "../../../shared/validate.js";
+import { pickCar } from "../../vehicles/validations/vehicle.validation.js";
 import { mergePatch } from "../../../shared/patch.js";
-import { readCustomer } from "../validations/customer.validation.js";
+import { CUSTOMER } from "../validations/customer.validation.js";
 
-const EDITABLE = ["first_name", "last_name", "email", "phone", "active"];
+// The routes check every field first (validations/customer.validation.js).
 
 async function create(req, res) {
-  const customer = readCustomer(req.body);
-  const vehicle = req.body.vehicle ? readVehicle(req.body.vehicle, "vehicle.") : null;
+  const customer = Object.fromEntries(CUSTOMER.map((name) => [name, req.body[name]]));
+  const vehicle = req.body.vehicle ? pickCar(req.body.vehicle) : null;
   return created(res, "Customer added", await customerService.create(customer, vehicle));
 }
 
@@ -22,14 +20,13 @@ async function list(req, res) {
 }
 
 async function getOne(req, res) {
-  const id = v.requireId(req.params.id, "id", "Customer id");
-  return ok(res, "Customer", await customerService.getProfile(id));
+  return ok(res, "Customer", await customerService.getProfile(req.params.id));
 }
 
 async function update(req, res) {
-  const id = v.requireId(req.params.id, "id", "Customer id");
-  const customer = readCustomer(mergePatch(await customerService.getById(id), req.body, EDITABLE));
-  return ok(res, "Customer saved", await customerService.update(id, customer, readUpdatedAt(req.body)));
+  const id = req.params.id;
+  const customer = mergePatch(await customerService.getById(id), req.body, CUSTOMER);
+  return ok(res, "Customer saved", await customerService.update(id, customer, new Date(req.body.updated_at)));
 }
 
 export { create, list, getOne, update };
