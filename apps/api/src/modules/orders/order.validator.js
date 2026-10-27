@@ -12,15 +12,21 @@ function readDate(body, field, label) {
 
 // A line is { service_id, price? } or an extra item { description, price }. Prices never come from the
 // browser for list services unless staff typed a custom price (FR-ORD-03).
+// On an estimate edit a line may also carry the line_id of the job it changes, so that job keeps its number
+// and its technician.
 function readLine(raw, field) {
   if (!raw || typeof raw !== "object") throw badField(field, "Job is not valid");
+  const lineId = raw.line_id == null ? undefined : v.requireId(raw.line_id, `${field}.line_id`, "Job");
+  let line;
   if (raw.service_id) {
-    const line = { service_id: v.requireId(raw.service_id, `${field}.service_id`, "Service") };
+    line = { service_id: v.requireId(raw.service_id, `${field}.service_id`, "Service") };
     if (raw.price !== undefined && raw.price !== null && raw.price !== "") line.price = readMoney(raw, "price", "Price");
-    return line;
+  } else {
+    const description = v.requireText(raw, "description", "Extra item description", 255);
+    line = { service_id: null, description, price: readMoney(raw, "price", "Extra item price") };
   }
-  const description = v.requireText(raw, "description", "Extra item description", 255);
-  return { service_id: null, description, price: readMoney(raw, "price", "Extra item price") };
+  if (lineId) line.line_id = lineId;
+  return line;
 }
 
 // allowEmpty: an estimate edit may remove every unstarted job when started jobs stay on the order

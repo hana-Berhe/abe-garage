@@ -55,8 +55,39 @@ const resetAttempts = rateLimit({
   handler: tooMany(`Too many attempts. Try again in ${WINDOW_MINUTES} minutes.`),
 });
 
+// BE-044: 60 status page lookups from one address every 15 minutes. A customer refreshing the page stays well
+// under it; a script trying codes does not.
+const statusLookups = rateLimit({
+  windowMs: WINDOW_MINUTES * 60 * 1000,
+  limit: 60,
+  standardHeaders: "draft-7",
+  legacyHeaders: false,
+  handler: tooMany(`Too many requests. Try again in ${WINDOW_MINUTES} minutes.`),
+});
+
+// BE-045: resend the status email at most 3 times per order and person, and 30 times per person, every 15 minutes.
+// Runs after the login check, so req.employee is set.
+const resendPerOrder = rateLimit({
+  windowMs: WINDOW_MINUTES * 60 * 1000,
+  limit: 3,
+  standardHeaders: "draft-7",
+  legacyHeaders: false,
+  keyGenerator: (req) => `resend|${req.employee.id}|${req.params.id}`,
+  handler: tooMany(`This email was just sent. Try again in ${WINDOW_MINUTES} minutes.`),
+});
+const resendPerPerson = rateLimit({
+  windowMs: WINDOW_MINUTES * 60 * 1000,
+  limit: 30,
+  standardHeaders: "draft-7",
+  legacyHeaders: false,
+  keyGenerator: (req) => `resend|${req.employee.id}`,
+  handler: tooMany(`Too many emails sent. Try again in ${WINDOW_MINUTES} minutes.`),
+});
+
 module.exports = {
   loginLimits: [loginAttempts, loginFailures],
   forgotLimits: [forgotPerAddress, forgotPerEmail],
   resetLimits: [resetAttempts],
+  statusLimits: [statusLookups],
+  resendLimits: [resendPerPerson, resendPerOrder],
 };

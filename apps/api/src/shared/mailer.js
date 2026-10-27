@@ -1,7 +1,15 @@
 const nodemailer = require("nodemailer");
 
 let transporter = null;
+let testTransport = null;
+
+// Tests swap in a fake mail server (BE-043, BE-049): { sendMail(message) } that records or fails on purpose.
+function setTransportForTests(fake) {
+  testTransport = fake;
+}
+
 function getTransporter() {
+  if (testTransport) return testTransport;
   if (!process.env.SMTP_HOST) return null;
   if (!transporter) {
     transporter = nodemailer.createTransport({
@@ -30,4 +38,4 @@ async function sendMail({ to, subject, text, html }) {
   }
 }
 
-module.exports = { sendMail };
+module.exports = { sendMail, setTransportForTests };

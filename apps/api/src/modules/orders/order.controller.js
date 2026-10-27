@@ -5,6 +5,7 @@ const { readUpdatedAt } = require("../../shared/stale-check");
 const { APPROVAL_METHODS } = require("../../shared/order-codes");
 const v = require("../../shared/validate");
 const { mergePatch } = require("../../shared/patch");
+const { ROLES } = require("../../middlewares/auth");
 const { readLine, readLines, readNotes } = require("./order.validator");
 
 const EDITABLE = ["estimated_ready_date", "notes_for_customer", "internal_notes", "lines"];
@@ -37,7 +38,12 @@ async function list(req, res) {
 async function getOne(req, res) {
   const id = v.requireId(req.params.id, "id", "Order id");
   const order = await orderService.getById(id);
-  return ok(res, "Order", order);
+  return ok(res, "Order", req.employee.role === ROLES.TECHNICIAN ? orderService.technicianView(order) : order);
+}
+
+async function estimate(req, res) {
+  const id = v.requireId(req.params.id, "id", "Order id");
+  return ok(res, "Read printable estimate data successful", await orderService.getEstimate(id));
 }
 
 async function update(req, res) {
@@ -82,8 +88,16 @@ async function lineStatus(req, res) {
   return ok(res, "Job saved", await orderService.updateLineStatus(lineId, change, req.employee));
 }
 
+// BE-038
+async function lineNote(req, res) {
+  const lineId = v.requireId(req.params.id, "id", "Job id");
+  if (req.body.technician_note === undefined) throw badField("technician_note", "Write a work note");
+  const note = v.optionalText(req.body, "technician_note", "Work note", 2000);
+  return ok(res, "Work note saved", await orderService.saveLineNote(lineId, note, req.employee));
+}
+
 async function myJobs(req, res) {
   return ok(res, "My jobs", await orderService.myJobs(req.employee.id));
 }
 
-module.exports = { create, list, getOne, update, addLine, approval, assignTechnician, lineStatus, myJobs };
+module.exports = { create, list, getOne, estimate, update, addLine, approval, assignTechnician, lineStatus, lineNote, myJobs };
