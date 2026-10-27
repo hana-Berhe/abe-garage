@@ -18,4 +18,8 @@ async function update(req, res) {
   return ok(res, "Settings saved", await settingsService.update(readSettings({ ...merged, updated_at: req.body.updated_at })));
 }
 
-module.exports = { get, getPublic, update };
+async function roles(req, res) {
+  return ok(res, "List fixed staff roles successful", await settingsService.listRoles());
+}
+
+module.exports = { get, getPublic, update, roles };

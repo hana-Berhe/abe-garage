@@ -29,4 +29,10 @@ async function update(data) {
   return get();
 }
 
-module.exports = { get, getPublic, update };
+// BE-013: the three fixed roles, for the employee form. There is no way to add or change roles.
+async function listRoles() {
+  const [roles] = await pool.query("SELECT role_id, role_name FROM roles ORDER BY role_id");
+  return { roles };
+}
+
+module.exports = { get, getPublic, update, listRoles };
