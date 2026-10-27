@@ -196,6 +196,53 @@ async function getById(id) {
   return order;
 }
 
+// BE-039: only what goes on the printed estimate. Uses the prices saved on the order, never today's price list,
+// and leaves out internal notes, technician notes, the status link code and the history. Reading changes nothing.
+async function getEstimate(id) {
+  const [rows] = await pool.query(
+    `SELECT o.order_id, o.status, o.subtotal, o.vat_rate, o.vat_amount, o.total, o.notes_for_customer, o.estimated_ready_date,
+       c.first_name, c.last_name, c.email, c.phone,
+       v.vehicle_id, v.customer_id, v.year, v.make, v.model, v.type, v.mileage, v.plate, v.vin, v.color
+     FROM orders o
+     JOIN customers c ON c.customer_id = o.customer_id
+     JOIN vehicles v ON v.vehicle_id = o.vehicle_id
+     WHERE o.order_id = ?`,
+    [id]
+  );
+  if (!rows[0]) throw new ApiError(404, "Order not found");
+  const o = rows[0];
+  const [lines] = await pool.query(
+    `SELECT l.line_id, COALESCE(s.name, l.description) AS service_name, s.description, l.line_price
+     FROM order_lines l LEFT JOIN services s ON s.service_id = l.service_id
+     WHERE l.order_id = ? ORDER BY l.line_id`,
+    [id]
+  );
+  const [[garage]] = await pool.query(
+    "SELECT settings_id, name, address, phone, email, vat_rate FROM garage_settings WHERE settings_id = 1"
+  );
+  return {
+    order_id: o.order_id,
+    document_type: "estimate",
+    estimate_number: `EST-${o.order_id}`,
+    issued_at: new Date().toISOString(),
+    garage,
+    customer: { first_name: o.first_name, last_name: o.last_name, email: o.email, phone: o.phone },
+    vehicle: {
+      vehicle_id: o.vehicle_id, customer_id: o.customer_id, year: o.year, make: o.make, model: o.model,
+      type: o.type, mileage: o.mileage, plate: o.plate, vin: o.vin, color: o.color,
+    },
+    lines,
+    subtotal: o.subtotal,
+    vat_rate: o.vat_rate,
+    vat_amount: o.vat_amount,
+    total: o.total,
+    currency: "ETB",
+    status: o.status,
+    notes_for_customer: o.notes_for_customer,
+    estimated_ready_date: o.estimated_ready_date,
+  };
+}
+
 // FR-ORD-07. Notes and dates can always change (until Declined); lines only while Awaiting approval.
 // Lines already started are kept, so after extra work the manager can drop a job the customer refused.
 async function update(id, data, updatedAt, employeeId) {
@@ -415,6 +462,7 @@ module.exports = {
   create,
   list,
   getById,
+  getEstimate,
   update,
   addLine,
   recordApproval,

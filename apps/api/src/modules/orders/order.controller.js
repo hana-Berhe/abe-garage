@@ -40,6 +40,11 @@ async function getOne(req, res) {
   return ok(res, "Order", order);
 }
 
+async function estimate(req, res) {
+  const id = v.requireId(req.params.id, "id", "Order id");
+  return ok(res, "Read printable estimate data successful", await orderService.getEstimate(id));
+}
+
 async function update(req, res) {
   const id = v.requireId(req.params.id, "id", "Order id");
   const merged = mergePatch(await orderService.getById(id), req.body, EDITABLE);
@@ -86,4 +91,4 @@ async function myJobs(req, res) {
   return ok(res, "My jobs", await orderService.myJobs(req.employee.id));
 }
 
-module.exports = { create, list, getOne, update, addLine, approval, assignTechnician, lineStatus, myJobs };
+module.exports = { create, list, getOne, estimate, update, addLine, approval, assignTechnician, lineStatus, myJobs };

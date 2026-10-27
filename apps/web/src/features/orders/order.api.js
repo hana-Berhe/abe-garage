@@ -3,6 +3,8 @@ import { fetchApi } from "../../shared/api/client";
 const orderService = {
   list: ({ page, search, status, paid } = {}) => fetchApi("/api/orders", { query: { page, search, status, paid } }),
   get: (id) => fetchApi(`/api/orders/${id}`),
+  // BE-039: only what is printed on the estimate.
+  estimate: (id) => fetchApi(`/api/orders/${id}/estimate`),
   create: (order) => fetchApi("/api/orders", { method: "POST", body: order }),
   update: (id, order) => fetchApi(`/api/orders/${id}`, { method: "PATCH", body: order }),
   addLine: (id, line) => fetchApi(`/api/orders/${id}/lines`, { method: "POST", body: line }),

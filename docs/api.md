@@ -44,6 +44,7 @@ The account is checked on every request. A role change, a switch-off or a new pa
 | POST | `/api/orders` | Create an order (Awaiting approval) and email the status link | M, A | BE-029 |
 | GET | `/api/orders` | List (`?status=&paid=&search=`) | T, M, A | BE-030 |
 | GET | `/api/orders/:order_id` | Order detail | T, M, A | BE-031 |
+| GET | `/api/orders/:order_id/estimate` | Printable estimate `EST-<order_id>`: garage, customer, car, jobs with their saved prices, totals, customer note. No internal or technician notes, status link code or history. Changes nothing | M, A | BE-039 |
 | PATCH | `/api/orders/:order_id` | Edit notes and date, and jobs while Awaiting approval (an empty `lines` removes every unstarted job when started jobs remain) | M, A | BE-032 |
 | PATCH | `/api/orders/:order_id/approval` | Record approve or decline (`decision`, `method`); approval sets Approved, In progress or Completed from the jobs | M, A | BE-033 |
 | POST | `/api/orders/:order_id/lines` | Add extra work; the order goes back to Awaiting approval | M, A | BE-034 |
@@ -57,4 +58,4 @@ The account is checked on every request. A role change, a switch-off or a new pa
 | POST | `/api/orders/:order_id/resend-email` | Send the status link or "car is ready" email again | M, A | BE-045 |
 | GET | `/api/dashboard` | Counters, cash totals and the orders that need attention | M, A | BE-046 |
 
-Not built yet: BE-039 (`GET /api/orders/:order_id/estimate`).
+
