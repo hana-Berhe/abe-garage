@@ -88,8 +88,16 @@ async function lineStatus(req, res) {
   return ok(res, "Job saved", await orderService.updateLineStatus(lineId, change, req.employee));
 }
 
+// BE-038
+async function lineNote(req, res) {
+  const lineId = v.requireId(req.params.id, "id", "Job id");
+  if (req.body.technician_note === undefined) throw badField("technician_note", "Write a work note");
+  const note = v.optionalText(req.body, "technician_note", "Work note", 2000);
+  return ok(res, "Work note saved", await orderService.saveLineNote(lineId, note, req.employee));
+}
+
 async function myJobs(req, res) {
   return ok(res, "My jobs", await orderService.myJobs(req.employee.id));
 }
 
-module.exports = { create, list, getOne, estimate, update, addLine, approval, assignTechnician, lineStatus, myJobs };
+module.exports = { create, list, getOne, estimate, update, addLine, approval, assignTechnician, lineStatus, lineNote, myJobs };

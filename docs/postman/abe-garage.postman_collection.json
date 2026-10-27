@@ -1969,6 +1969,55 @@
           }
         },
         {
+          "name": "Work note before approval (409)",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('status 409', () => pm.response.to.have.status(409));",
+                  "pm.test('{ status, message, data } shape', () => { const j = pm.response.json(); pm.expect(j).to.have.keys('status', 'message', 'data'); });"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "PATCH",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "x-access-token",
+                "value": "{{token_manager}}"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/order-lines/{{line1}}/note",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "order-lines",
+                "{{line1}}",
+                "note"
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"technician_note\": \"Too early\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          }
+        },
+        {
           "name": "Start a job before approval (400)",
           "event": [
             {
@@ -2292,6 +2341,56 @@
             "body": {
               "mode": "raw",
               "raw": "{\n  \"status\": 1\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          }
+        },
+        {
+          "name": "Work note (technician)",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('status 200', () => pm.response.to.have.status(200));",
+                  "pm.test('{ status, message, data } shape', () => { const j = pm.response.json(); pm.expect(j).to.have.keys('status', 'message', 'data'); });",
+                  "pm.test('note saved', () => pm.expect(pm.response.json().data.technician_note).to.eql('Pads worn, replaced'));"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "PATCH",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "x-access-token",
+                "value": "{{token_tech}}"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/order-lines/{{line1}}/note",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "order-lines",
+                "{{line1}}",
+                "note"
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"technician_note\": \"Pads worn, replaced\"\n}",
               "options": {
                 "raw": {
                   "language": "json"
@@ -2759,6 +2858,53 @@
                 "public",
                 "orders",
                 "00000000000000000000000000000000"
+              ]
+            }
+          }
+        },
+        {
+          "name": "Car service history, newest first (BE-024)",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('status 200', () => pm.response.to.have.status(200));",
+                  "pm.test('{ status, message, data } shape', () => { const j = pm.response.json(); pm.expect(j).to.have.keys('status', 'message', 'data'); });",
+                  "pm.test('the order with its jobs', () => { const d = pm.response.json().data; pm.expect(d.rows[0].order_id).to.eql(Number(pm.collectionVariables.get('orderId'))); pm.expect(d.rows[0].jobs.length).to.eql(2); });"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "x-access-token",
+                "value": "{{token_tech}}"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/vehicles/{{vehicleId}}/orders?page=1",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "vehicles",
+                "{{vehicleId}}",
+                "orders"
+              ],
+              "query": [
+                {
+                  "key": "page",
+                  "value": "1"
+                }
               ]
             }
           }
