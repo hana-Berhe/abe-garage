@@ -1,0 +1,136 @@
+import * as orderService from "../service/order.service.js";
+import { ok, created, badField, ApiError } from "../../../shared/respond.js";
+import { readPage } from "../../../shared/pagination.js";
+import { readUpdatedAt } from "../../../shared/stale-check.js";
+import { APPROVAL_METHODS, ORDER_STATUS } from "../../../shared/order-codes.js";
+import * as v from "../../../shared/validate.js";
+import { mergePatch } from "../../../shared/patch.js";
+import { ROLES } from "../../../middlewares/auth.js";
+import { readLine, readLines, readNotes, checkReadyDate } from "../validations/order.validation.js";
+
+const EDITABLE = ["estimated_ready_date", "notes_for_customer", "internal_notes", "lines"];
+
+async function create(req, res) {
+  let mileage = null;
+  if (req.body.mileage !== undefined && req.body.mileage !== null && req.body.mileage !== "") {
+    mileage = Number(req.body.mileage);
+    if (!Number.isInteger(mileage) || mileage < 0) throw badField("mileage", "Mileage must be a whole number");
+  }
+  const data = {
+    customer_id: v.requireId(req.body.customer_id, "customer_id", "Customer"),
+    vehicle_id: v.requireId(req.body.vehicle_id, "vehicle_id", "Car"),
+    lines: readLines(req.body),
+    mileage,
+    ...readNotes(req.body),
+  };
+  checkReadyDate(data.estimated_ready_date);
+  const order = await orderService.create(data, req.employee.id);
+  return created(res, "Order created", order);
+}
+
+// ?paid=true|false (or 1|0); missing means either.
+function queryFlag(query, field) {
+  const value = query[field];
+  if (value === undefined || value === "") return null;
+  if (value === "true" || value === "1") return true;
+  if (value === "false" || value === "0") return false;
+  throw badField(field, `${field} must be true or false`);
+}
+
+const queryId = (query, field, label) => (query[field] === undefined || query[field] === "" ? null : v.requireId(query[field], field, label));
+
+// BE-030: status, paid, customer_id, vehicle_id and unpaid_only (completed and not yet paid).
+async function list(req, res) {
+  const page = readPage(req.query);
+  const status = req.query.status ? Number(req.query.status) : null;
+  if (status !== null && !(status >= 1 && status <= 5)) throw badField("status", "Unknown status");
+  const paid = queryFlag(req.query, "paid");
+  const unpaidOnly = queryFlag(req.query, "unpaid_only") === true;
+  if (unpaidOnly && (paid === true || (status !== null && status !== 4))) {
+    throw badField("unpaid_only", "Unpaid (completed) only covers completed orders that aren't paid, so it can't be combined with Paid or another status");
+  }
+  const filters = {
+    status: unpaidOnly ? 4 : status,
+    paid: unpaidOnly ? false : paid,
+    customerId: queryId(req.query, "customer_id", "Customer"),
+    vehicleId: queryId(req.query, "vehicle_id", "Car"),
+  };
+  return ok(res, "Orders", await orderService.list({ ...page, ...filters }));
+}
+
+async function getOne(req, res) {
+  const id = v.requireId(req.params.id, "id", "Order id");
+  const order = await orderService.getById(id);
+  return ok(res, "Order", req.employee.role === ROLES.TECHNICIAN ? orderService.technicianView(order) : order);
+}
+
+async function estimate(req, res) {
+  const id = v.requireId(req.params.id, "id", "Order id");
+  return ok(res, "Read printable estimate data successful", await orderService.getEstimate(id));
+}
+
+async function update(req, res) {
+  const id = v.requireId(req.params.id, "id", "Order id");
+  const current = await orderService.getById(id);
+  const merged = mergePatch(current, req.body, EDITABLE);
+  const data = readNotes(merged);
+  // Only a changed date is checked, so an order whose date has passed can still get a new note.
+  if (data.estimated_ready_date !== current.estimated_ready_date) {
+    // BE-032: once completed the car is ready, so the date stays; notes can still change.
+    if (current.status === ORDER_STATUS.COMPLETED) {
+      throw new ApiError(409, "The order is completed, so its ready date can't change", { field: "estimated_ready_date" });
+    }
+    checkReadyDate(data.estimated_ready_date);
+  }
+  if (req.body.lines !== undefined) data.lines = readLines(req.body, { allowEmpty: true });
+  return ok(res, "Order saved", await orderService.update(id, data, readUpdatedAt(req.body), req.employee.id));
+}
+
+async function addLine(req, res) {
+  const id = v.requireId(req.params.id, "id", "Order id");
+  const line = readLine(req.body, "line");
+  return created(res, "Job added. The order needs the customer's approval again.", await orderService.addLine(id, line, req.employee.id));
+}
+
+async function approval(req, res) {
+  const id = v.requireId(req.params.id, "id", "Order id");
+  const decision = req.body.decision;
+  if (decision !== "approve" && decision !== "decline") throw badField("decision", "Choose approve or decline");
+  if (!APPROVAL_METHODS.includes(req.body.method)) throw badField("method", "Choose in person or by phone");
+  const note = v.optionalText(req.body, "note", "Note", 150);
+  const order = await orderService.recordApproval(id, { decision, method: req.body.method, note }, req.employee.id);
+  return ok(res, decision === "approve" ? "Approval recorded" : "Order declined", order);
+}
+
+async function assignTechnician(req, res) {
+  const lineId = v.requireId(req.params.id, "id", "Job id");
+  // BE-035: there is no un-assign; a job always moves to another technician.
+  const technicianId = v.requireId(req.body.technician_id, "technician_id", "Technician");
+  return ok(res, "Technician saved", await orderService.assignTechnician(lineId, technicianId, req.employee.id));
+}
+
+async function lineStatus(req, res) {
+  const lineId = v.requireId(req.params.id, "id", "Job id");
+  const change = {};
+  if (req.body.status !== undefined) {
+    change.status = Number(req.body.status);
+    if (![1, 2].includes(change.status)) throw badField("status", "Status must be 1 (Started) or 2 (Done)");
+  }
+  if (req.body.note !== undefined) change.note = v.optionalText(req.body, "note", "Work note", 2000);
+  if (change.status === undefined && change.note === undefined) throw badField("status", "Nothing to change");
+  return ok(res, "Job saved", await orderService.updateLineStatus(lineId, change, req.employee));
+}
+
+// BE-038
+async function lineNote(req, res) {
+  const lineId = v.requireId(req.params.id, "id", "Job id");
+  if (req.body.technician_note === undefined) throw badField("technician_note", "Write a work note");
+  const note = v.optionalText(req.body, "technician_note", "Work note", 2000);
+  return ok(res, "Work note saved", await orderService.saveLineNote(lineId, note, req.employee));
+}
+
+async function myJobs(req, res) {
+  return ok(res, "My jobs", await orderService.myJobs(req.employee.id));
+}
+
+export { create, list, getOne, estimate, update, addLine, approval, assignTechnician, lineStatus, lineNote, myJobs };

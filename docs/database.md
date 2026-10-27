@@ -1,6 +1,6 @@
 # Database
 
-MySQL 8, InnoDB, utf8mb4. The whole schema is in [`apps/api/db/schema.sql`](../apps/api/db/schema.sql) and is safe to run twice.
+MySQL 8, InnoDB, utf8mb4. The whole schema is in [`backend/db/schema.sql`](../backend/db/schema.sql) and is safe to run twice.
 
 ## Tables
 
@@ -34,22 +34,22 @@ MySQL 8, InnoDB, utf8mb4. The whole schema is in [`apps/api/db/schema.sql`](../a
 mysql -u root -p -e "CREATE DATABASE abe_garage CHARACTER SET utf8mb4;
   CREATE USER 'abe'@'localhost' IDENTIFIED BY 'change_me';
   GRANT ALL ON abe_garage.* TO 'abe'@'localhost';"
-cp apps/api/.env.example apps/api/.env      # fill in DB_* and INSTALL_ADMIN_*
+cp backend/.env.example backend/.env      # fill in DB_* and INSTALL_ADMIN_*
 npm run dev:api
 curl -X POST -H "X-Setup-Key: <INSTALL_SECRET>" http://localhost:8000/api/install  # once: tables, roles, settings, first admin
 npm run seed                                  # optional demo data
 ```
 
-An existing database gets newer changes with one command. It applies each file in `apps/api/db/migrations` once, in order, and records it in the `schema_migrations` table, so running it again does nothing:
+An existing database gets newer changes with one command. It applies each file in `backend/db/migrations` once, in order, and records it in the `schema_migrations` table, so running it again does nothing:
 
 ```bash
-npm --prefix apps/api run migrate
+npm --prefix backend run migrate
 ```
 
 A fresh install records every file as done, because `schema.sql` already has them all. If you ran some files by hand before this command existed, say which was the last one, and the command records those as done and applies only the rest (for example, when you last ran `006`):
 
 ```bash
-npm --prefix apps/api run migrate -- --already=006
+npm --prefix backend run migrate -- --already=006
 ```
 
 After `003`, orders that were already paid have no saved invoice. A manager can issue it from the order's invoice page.

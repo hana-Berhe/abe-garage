@@ -78,7 +78,7 @@
                 "install"
               ]
             },
-            "description": "Run once on an empty database, with setupKey set to INSTALL_SECRET from apps/api/.env and INSTALL_ENABLED=true. On an installed database it answers 403, which is expected: skip this request then."
+            "description": "Run once on an empty database, with setupKey set to INSTALL_SECRET from backend/.env and INSTALL_ENABLED=true. On an installed database it answers 403, which is expected: skip this request then."
           }
         },
         {

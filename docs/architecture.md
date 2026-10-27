@@ -3,43 +3,50 @@
 Three tiers and one API. React pages talk only to the Express REST API, and only the API talks to MySQL. Email goes one way, from the API to the customer, and only after the data is saved.
 
 ```
-apps/web (React + Vite, :5173)  ──HTTP JSON──▶  apps/api (Express, :8000)  ──SQL──▶  MySQL 8 (10 tables)
+frontend (React + Vite, :5173)  ──HTTP JSON──▶  backend (Express, :8000)  ──SQL──▶  MySQL 8 (10 tables)
                                                        └──SMTP──▶ customer email
 ```
 
-## API (`apps/api`)
+## API (`backend`)
+
+The backend uses ES modules (`import` / `export`, `"type": "module"` in `backend/package.json`). Local imports always end in `.js`.
 
 ```
-apps/api/
+backend/
 ├── src/
 │   ├── app.js                 Express app: CORS, JSON, routes, error handler
 │   ├── server.js              reads .env and starts the server
-│   ├── routes.js              mounts every module's router
-│   ├── config/db.js           MySQL pool and withTransaction()
+│   ├── routes.js              mounts every feature's router
+│   ├── config/
+│   │   ├── env.js             loads backend/.env (imported first)
+│   │   └── db.js              MySQL pool and withTransaction()
 │   ├── middlewares/
 │   │   ├── auth.js            verifyToken, hasRole([...]), ROLES
 │   │   └── error-handler.js   every error becomes { status, message, data }
-│   ├── modules/               one folder per feature
+│   ├── api/                   one folder per feature
 │   │   └── <feature>/
-│   │       ├── <name>.routes.js      URL + middleware only
-│   │       ├── <name>.controller.js  reads the request, calls the service, answers
-│   │       ├── <name>.validator.js   checks input, 400 with the field name
-│   │       └── <name>.service.js     business rules and SQL (? placeholders only)
+│   │       ├── routes/<name>.routes.js            URL + middleware only
+│   │       ├── controller/<name>.controller.js    reads the request, calls the service, answers
+│   │       ├── validations/<name>.validation.js   checks input, 400 with the field name
+│   │       └── service/<name>.service.js          business rules and SQL (? placeholders only)
 │   └── shared/                money, mailer, pagination, responses, validation helpers
 ├── db/
 │   ├── schema.sql             the 10 tables (only Member 1 changes it)
+│   ├── migrations/            numbered change files, applied by `npm run migrate`
 │   └── seeds/seed.js          demo data for local work
-└── tests/unit/                node:test unit tests
+└── tests/
+    ├── unit/                  node:test unit tests
+    └── integration/           real API + MySQL test database
 ```
 
-Modules: `health`, `install`, `employees`, `settings`, `customers`, `vehicles`, `services`, `orders` (orders, approval, technician jobs, history, emails), `invoices`, `public`, `dashboard`.
+Features: `health`, `install`, `employees`, `settings`, `customers`, `vehicles`, `services`, `orders` (orders, approval, technician jobs, history, emails), `invoices`, `public`, `dashboard`.
 
-A module uses another module through its service, never by writing to that module's tables.
+A feature uses another feature through its service, never by writing to that feature's tables.
 
-## Web (`apps/web`)
+## Web (`frontend`)
 
 ```
-apps/web/src/
+frontend/src/
 ├── main.jsx                   providers and router
 ├── app/App.jsx                every route, with PrivateAuthRoute and roles
 ├── layouts/                   public site shell, staff shell, role-aware menu
@@ -64,7 +71,7 @@ Pages never call `fetch` and never hold business rules. Money shown before savin
 | --- | --- |
 | Login | bcrypt check (also for unknown emails, so both take as long), then a JWT valid 1 hour holding id, role, name and token version |
 | Roles | `hasRole([...])` on every staff route; the server check is the real one |
-| Input | checked in the validator; 400 with `{ field }` so the form shows it under the right input |
+| Input | checked in the feature's validation file; 400 with `{ field }` so the form shows it under the right input |
 | Answers | `{ status, message, data }` with the right HTTP code |
 | Multi-table saves | one transaction (`withTransaction`) |
 | Money | `shared/money.js` only; DECIMAL(10,2); VAT added on top of the subtotal |
