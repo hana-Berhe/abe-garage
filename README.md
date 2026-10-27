@@ -47,8 +47,17 @@ Log in at http://localhost:5173/login with `INSTALL_ADMIN_EMAIL` and `INSTALL_AD
 | `npm run dev:api` / `npm run dev:web` | start one app in watch mode |
 | `npm run dev` | start both |
 | `npm run seed` | load demo data |
-| `npm test` | API unit tests |
+| `npm test` | API unit tests (no database needed) |
+| `npm run test:integration` | API integration tests against a throw-away MySQL test database (see below) |
 | `npm run build` | production build of the web app |
+
+## Tests
+
+- **Unit tests** (`npm test`) check money, time zones, PATCH merging and input rules. No database needed.
+- **Integration tests** (`npm run test:integration`) start the real API and call it over HTTP. They cover the full visit (customer → order → approval → jobs → invoice → cash → status page), every role on every address, revoked and expired logins, duplicates and bad input, roll-back, two people saving at once, invoices that never change, money rounding, mail failures, password reset, the shared error format, and 1000 orders against the 2-second target.
+  They need a MySQL user that may create and drop a database whose name ends in `_test`. Copy `apps/api/.env.test.example` to `apps/api/.env.test` and fill it in. **The test database is wiped on every run**, and a name that doesn't end in `_test` is refused.
+- **GitHub Actions** (`.github/workflows/test.yml`) runs both, plus the web build, on every pull request.
+- **Postman**: import `docs/postman/abe-garage.postman_collection.json` and `abe-garage.postman_environment.json`, set `baseUrl`, `adminEmail` and `adminPassword`, then run the collection on a freshly installed database. See `docs/postman/README.md`.
 
 ## Team rules
 
