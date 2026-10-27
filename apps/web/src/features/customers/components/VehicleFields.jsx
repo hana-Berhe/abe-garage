@@ -22,7 +22,7 @@ export default function VehicleFields({ value, onChange, fieldError, prefix = ""
       <div className="col-sm-4"><Field {...props("type", "Type (sedan, SUV…)")} /></div>
       <div className="col-sm-4"><Field {...props("color", "Color")} /></div>
       <div className="col-sm-6"><Field {...props("mileage", "Mileage (km)", { type: "number", min: 0 })} /></div>
-      <div className="col-sm-6"><Field {...props("vin", "VIN (optional, 17 characters)")} /></div>
+      <div className="col-sm-6"><Field {...props("vin", "VIN (optional, up to 32 characters)")} /></div>
     </div>
   );
 }

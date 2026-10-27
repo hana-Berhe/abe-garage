@@ -29,6 +29,7 @@ const ACTIONS = {
   job_started: "Job started",
   job_done: "Job done",
   completed: "All jobs done",
+  invoice_issued: "Invoice issued",
   email_sent: "Email sent",
   email_failed: "Email failed",
   paid: "Paid in cash",

@@ -23,8 +23,10 @@ function readLine(raw, field) {
   return { service_id: null, description, price: readMoney(raw, "price", "Extra item price") };
 }
 
-function readLines(body) {
-  if (!Array.isArray(body.lines) || body.lines.length === 0) throw badField("lines", "Choose at least one service");
+// allowEmpty: an estimate edit may remove every unstarted job when started jobs stay on the order
+// (the customer said no to the extra work); the service checks that at least one job remains.
+function readLines(body, { allowEmpty = false } = {}) {
+  if (!Array.isArray(body.lines) || (body.lines.length === 0 && !allowEmpty)) throw badField("lines", "Choose at least one service");
   if (body.lines.length > 50) throw badField("lines", "Too many jobs on one order");
   return body.lines.map((l, i) => readLine(l, `lines.${i}`));
 }

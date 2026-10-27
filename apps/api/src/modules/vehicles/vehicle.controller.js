@@ -2,7 +2,10 @@ const vehicleService = require("./vehicle.service");
 const { ok, created, badField } = require("../../shared/respond");
 const { readUpdatedAt } = require("../../shared/stale-check");
 const v = require("../../shared/validate");
+const { mergePatch } = require("../../shared/patch");
 const { readVehicle } = require("./vehicle.validator");
+
+const EDITABLE = ["year", "make", "model", "type", "mileage", "plate", "vin", "color"];
 
 async function create(req, res) {
   const vehicle = readVehicle(req.body);
@@ -22,7 +25,7 @@ async function getOne(req, res) {
 
 async function update(req, res) {
   const id = v.requireId(req.params.id, "id", "Car id");
-  const vehicle = readVehicle(req.body);
+  const vehicle = readVehicle(mergePatch(await vehicleService.getById(id), req.body, EDITABLE));
   return ok(res, "Car saved", await vehicleService.update(id, vehicle, readUpdatedAt(req.body)));
 }
 

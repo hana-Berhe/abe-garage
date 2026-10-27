@@ -1,6 +1,6 @@
 import { useGarage } from "../useGarage";
 import PageHero from "../components/PageHero";
-import CallbackForm from "../components/CallbackForm";
+import HowItWorks from "../components/HowItWorks";
 import Icon from "../../../shared/components/Icon";
 import { hour12, telHref } from "../../../shared/lib/format";
 import mapArt from "../../../assets/map.svg";
@@ -25,8 +25,8 @@ export default function Contact() {
 
   return (
     <>
-      <PageHero crumb="Contact" eyebrow="Contact" title={<>Call us, or let<br /><em>us call you.</em></>}>
-        <p>There is no online booking. Leave your number and what the car is doing, and we call you back with a price and a time that suits you.</p>
+      <PageHero crumb="Contact" eyebrow="Contact" title={<>Call us, or<br /><em>drop in.</em></>}>
+        <p>There is no online booking. Call us and tell us what the car is doing, and we agree a price and a time that suits you.</p>
       </PageHero>
 
       <section className="section on-light" style={{ paddingTop: 64 }}>
@@ -38,20 +38,10 @@ export default function Contact() {
         </div>
 
         <div className="wrap contact-grid" style={{ marginTop: 48, alignItems: "start" }}>
-          <div style={{ display: "flex", flexDirection: "column", gap: 24 }}>
-            <a className="map" href={mapsUrl || undefined} target="_blank" rel="noreferrer" aria-label="Open the garage location in maps">
-              <img src={mapArt} alt="Map showing where the garage is" />
-            </a>
-            <div className="next">
-              <div className="eyebrow">What happens next</div>
-              <div className="steps">
-                <div className="step on"><h3>We get your request</h3><p>It goes straight to our front desk.</p></div>
-                <div className="step"><h3>We call you back</h3><p>Usually the same working day, from {opens}.</p></div>
-                <div className="step"><h3>We agree a price and a time</h3><p>Nothing is booked until we have spoken.</p></div>
-              </div>
-            </div>
-          </div>
-          <div className="form-wrap"><CallbackForm id="callback" /></div>
+          <a className="map" href={mapsUrl || undefined} target="_blank" rel="noreferrer" aria-label="Open the garage location in maps">
+            <img src={mapArt} alt="Map showing where the garage is" />
+          </a>
+          <HowItWorks opens={opens} />
         </div>
       </section>
     </>

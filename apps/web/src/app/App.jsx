@@ -9,6 +9,8 @@ import About from "../features/website/pages/About";
 import Services from "../features/website/pages/Services";
 import Contact from "../features/website/pages/Contact";
 import Login from "../features/auth/pages/Login";
+import ForgotPassword from "../features/auth/pages/ForgotPassword";
+import ResetPassword from "../features/auth/pages/ResetPassword";
 import Unauthorized from "../features/auth/pages/Unauthorized";
 import NotFound from "../features/website/pages/NotFound";
 
@@ -29,7 +31,6 @@ import Estimate from "../features/orders/pages/Estimate";
 import MyJobs from "../features/jobs/pages/MyJobs";
 import Invoice from "../features/invoices/pages/Invoice";
 import OrderStatus from "../features/tracking/pages/OrderStatus";
-import CallbackList from "../features/callbacks/pages/CallbackList";
 
 const { TECHNICIAN: T, ADMIN: A } = ROLES;
 
@@ -44,6 +45,8 @@ export default function App() {
         <Route path="/contact" element={<Contact />} />
       </Route>
       <Route path="/login" element={<Login />} />
+      <Route path="/forgot-password" element={<ForgotPassword />} />
+      <Route path="/reset-password" element={<ResetPassword />} />
       <Route path="/order-status/:hash" element={<OrderStatus />} />
       <Route path="/unauthorized" element={<Unauthorized />} />
       <Route path="*" element={<NotFound />} />
@@ -61,7 +64,6 @@ export default function App() {
         <Route path="customer/:id/edit" element={<PrivateAuthRoute roles={OFFICE}><CustomerForm /></PrivateAuthRoute>} />
         <Route path="customer/:id" element={<CustomerProfile />} />
         <Route path="vehicle/:id" element={<VehiclePage />} />
-        <Route path="callbacks" element={<PrivateAuthRoute roles={OFFICE}><CallbackList /></PrivateAuthRoute>} />
         <Route path="services" element={<PrivateAuthRoute roles={[A]}><ServiceList /></PrivateAuthRoute>} />
         <Route path="employees" element={<PrivateAuthRoute roles={[A]}><EmployeeList /></PrivateAuthRoute>} />
         <Route path="employee/new" element={<PrivateAuthRoute roles={[A]}><EmployeeForm /></PrivateAuthRoute>} />

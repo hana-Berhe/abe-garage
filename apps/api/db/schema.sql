@@ -20,12 +20,28 @@ CREATE TABLE IF NOT EXISTS employees (
   password_hash CHAR(60)     NOT NULL,
   role_id       TINYINT UNSIGNED NOT NULL,
   active        TINYINT(1)   NOT NULL DEFAULT 1,
+  -- Raised on a role change, switch-off or new password; older login tokens then stop working.
+  token_version INT UNSIGNED NOT NULL DEFAULT 0,
   created_at    DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
   updated_at    DATETIME(3) NOT NULL DEFAULT CURRENT_TIMESTAMP(3) ON UPDATE CURRENT_TIMESTAMP(3),
   PRIMARY KEY (employee_id),
   UNIQUE KEY uq_employees_email (email),
   KEY ix_employees_role_active (role_id, active),
   CONSTRAINT fk_employees_role FOREIGN KEY (role_id) REFERENCES roles (role_id)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
+
+-- BE-005/006: one-time "forgot password" links. Only the SHA-256 of the token is stored; it lasts 15 minutes.
+CREATE TABLE IF NOT EXISTS password_reset_tokens (
+  token_id    INT UNSIGNED NOT NULL AUTO_INCREMENT,
+  employee_id INT UNSIGNED NOT NULL,
+  token_hash  CHAR(64) NOT NULL,
+  expires_at  DATETIME NOT NULL,
+  used_at     DATETIME NULL,
+  created_at  DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  PRIMARY KEY (token_id),
+  UNIQUE KEY uq_reset_token_hash (token_hash),
+  KEY ix_reset_employee (employee_id, used_at),
+  CONSTRAINT fk_reset_employee FOREIGN KEY (employee_id) REFERENCES employees (employee_id)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
 
 CREATE TABLE IF NOT EXISTS customers (
@@ -52,16 +68,16 @@ CREATE TABLE IF NOT EXISTS vehicles (
   type        VARCHAR(30)  NULL,
   mileage     INT UNSIGNED NULL,
   plate       VARCHAR(20)  NOT NULL,
-  vin         VARCHAR(17)  NULL,
+  vin         VARCHAR(32)  NULL,
   color       VARCHAR(30)  NULL,
   created_at  DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
   updated_at  DATETIME(3) NOT NULL DEFAULT CURRENT_TIMESTAMP(3) ON UPDATE CURRENT_TIMESTAMP(3),
   PRIMARY KEY (vehicle_id),
   UNIQUE KEY uq_vehicles_plate (plate),
-  UNIQUE KEY uq_vehicles_vin (vin),
   -- Lets orders point at (vehicle_id, customer_id) so a car must belong to the order's customer.
   UNIQUE KEY uq_vehicles_owner (vehicle_id, customer_id),
   KEY ix_vehicles_customer (customer_id),
+  KEY ix_vehicles_vin (vin),
   CONSTRAINT fk_vehicles_customer FOREIGN KEY (customer_id) REFERENCES customers (customer_id)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
 
@@ -101,10 +117,16 @@ CREATE TABLE IF NOT EXISTS orders (
   paid                 TINYINT(1)    NOT NULL DEFAULT 0,
   paid_at              DATETIME      NULL,
   paid_received_by     INT UNSIGNED  NULL,
+  -- The issued invoice: number, time, who issued it and a frozen copy of what it shows (BE-040).
+  invoice_number       VARCHAR(20)   NULL,
+  invoice_issued_at    DATETIME      NULL,
+  invoice_issued_by    INT UNSIGNED  NULL,
+  invoice_snapshot     JSON          NULL,
   created_at           DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
   updated_at           DATETIME(3) NOT NULL DEFAULT CURRENT_TIMESTAMP(3) ON UPDATE CURRENT_TIMESTAMP(3),
   PRIMARY KEY (order_id),
   UNIQUE KEY uq_orders_hash (order_hash),
+  UNIQUE KEY uq_orders_invoice (invoice_number),
   KEY ix_orders_status_paid (status, paid),
   KEY ix_orders_customer (customer_id),
   KEY ix_orders_vehicle_owner (vehicle_id, customer_id),
@@ -113,9 +135,11 @@ CREATE TABLE IF NOT EXISTS orders (
   CONSTRAINT fk_orders_created_by FOREIGN KEY (created_by) REFERENCES employees (employee_id),
   CONSTRAINT fk_orders_approved_by FOREIGN KEY (approved_by) REFERENCES employees (employee_id),
   CONSTRAINT fk_orders_paid_by FOREIGN KEY (paid_received_by) REFERENCES employees (employee_id),
+  CONSTRAINT fk_orders_invoice_by FOREIGN KEY (invoice_issued_by) REFERENCES employees (employee_id),
   CONSTRAINT ck_orders_status CHECK (status BETWEEN 1 AND 5),
   CONSTRAINT ck_orders_money CHECK (subtotal >= 0 AND vat_amount >= 0 AND total >= 0 AND vat_rate >= 0),
-  CONSTRAINT ck_orders_paid CHECK (paid = 0 OR status = 4)
+  CONSTRAINT ck_orders_paid CHECK (paid = 0 OR status = 4),
+  CONSTRAINT ck_orders_invoice CHECK (invoice_number IS NULL OR status = 4)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
 
 CREATE TABLE IF NOT EXISTS order_lines (
@@ -169,28 +193,6 @@ CREATE TABLE IF NOT EXISTS garage_settings (
   PRIMARY KEY (settings_id),
   CONSTRAINT ck_settings_single_row CHECK (settings_id = 1),
   CONSTRAINT ck_settings_vat CHECK (vat_rate >= 0 AND vat_rate <= 100)
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
-
--- Call-back requests sent from the public website (there is no online booking).
--- status: 0 new, 1 called.
-CREATE TABLE IF NOT EXISTS callback_requests (
-  callback_id INT UNSIGNED NOT NULL AUTO_INCREMENT,
-  full_name   VARCHAR(100) NOT NULL,
-  phone       VARCHAR(30)  NOT NULL,
-  car         VARCHAR(120) NULL,
-  service_id  INT UNSIGNED NULL,
-  problem     VARCHAR(1000) NULL,
-  best_time   VARCHAR(20)  NOT NULL DEFAULT 'any',
-  status      TINYINT UNSIGNED NOT NULL DEFAULT 0,
-  called_by   INT UNSIGNED NULL,
-  called_at   DATETIME NULL,
-  created_at  DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
-  PRIMARY KEY (callback_id),
-  KEY ix_callback_status (status, created_at),
-  CONSTRAINT fk_callback_service FOREIGN KEY (service_id) REFERENCES services (service_id),
-  CONSTRAINT fk_callback_employee FOREIGN KEY (called_by) REFERENCES employees (employee_id),
-  CONSTRAINT ck_callback_status CHECK (status IN (0, 1)),
-  CONSTRAINT ck_callback_best_time CHECK (best_time IN ('any', 'morning', 'afternoon'))
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
 
 INSERT IGNORE INTO roles (role_id, role_name) VALUES

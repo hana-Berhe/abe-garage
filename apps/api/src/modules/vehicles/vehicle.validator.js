@@ -18,8 +18,9 @@ function readVehicle(body, prefix = "") {
       throw err;
     }
   };
-  const vin = field("vin", "VIN", 17, false);
-  if (vin && !/^[A-HJ-NPR-Z0-9]{17}$/i.test(vin)) throw badField(prefix + "vin", "VIN must be 17 letters and numbers");
+  // BE-021: optional and not unique. Older and imported cars can have shorter or longer chassis numbers.
+  const vin = field("vin", "VIN", 32, false);
+  if (vin && !/^[A-Z0-9]+$/i.test(vin)) throw badField(prefix + "vin", "VIN can only have letters and numbers");
   return {
     year: optionalInt(body, "year", "Year", 1900, new Date().getFullYear() + 1, prefix),
     make: field("make", "Make", 50, true),

@@ -2,7 +2,7 @@
 
 One web system to run a car repair shop: customers and cars, estimates with 15% VAT, customer approval, technician jobs, invoices and cash payment, and a private status link for customers.
 
-The product spec is **Abe Garage PRD v1.1**. Stack: React 18 + Vite, Express 4, MySQL 8 (9 tables, plain SQL with `mysql2`).
+The product spec is **Abe Garage PRD v1.1**. Stack: React 18 + Vite, Express 4, MySQL 8 (10 tables, plain SQL with `mysql2`).
 
 ## Repository layout
 
@@ -33,7 +33,7 @@ cp apps/api/.env.example apps/api/.env        # fill in DB_PASSWORD, JWT_SECRET,
 cp apps/web/.env.example apps/web/.env
 
 npm run dev:api                               # http://localhost:8000
-curl http://localhost:8000/install            # once: tables, roles, settings and the first admin
+curl -X POST http://localhost:8000/api/install  # once: tables, roles, settings and the first admin
 npm run seed                                  # optional: demo staff, customers, services and orders
 npm run dev:web                               # http://localhost:5173
 ```

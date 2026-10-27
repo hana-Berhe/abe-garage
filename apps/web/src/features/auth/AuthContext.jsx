@@ -27,6 +27,13 @@ export function AuthProvider({ children }) {
     navigate("/");
   }, [navigate]);
 
+  // Sends the person back to the login page with a reason, for example after a password change.
+  const endSession = useCallback((message) => {
+    tokenStore.clear();
+    setEmployee(null);
+    navigate("/login", { state: { message } });
+  }, [navigate]);
+
   useEffect(() => {
     if (!employee) tokenStore.clear();
     setUnauthorizedHandler(() => {
@@ -36,6 +43,19 @@ export function AuthProvider({ children }) {
     });
   }, [employee, navigate]);
 
+  // BE-008: the token carries the name and role from login time. Refresh them from the database once per session,
+  // so a name changed by the admin shows straight away. A role change or switch-off ends the session anyway (401/403).
+  const employeeId = employee?.id;
+  useEffect(() => {
+    if (!employeeId) return undefined;
+    let live = true;
+    employeeService
+      .profile()
+      .then((p) => live && setEmployee((cur) => (cur ? { ...cur, role: p.role_id, name: `${p.first_name} ${p.last_name}` } : cur)))
+      .catch(() => {});
+    return () => { live = false; };
+  }, [employeeId]);
+
   const login = useCallback(async (email, password) => {
     const { token } = await employeeService.login(email, password);
     tokenStore.set(token);
@@ -44,7 +64,7 @@ export function AuthProvider({ children }) {
     return who;
   }, []);
 
-  const value = useMemo(() => ({ employee, isLoggedIn: !!employee, login, logout }), [employee, login, logout]);
+  const value = useMemo(() => ({ employee, isLoggedIn: !!employee, login, logout, endSession }), [employee, login, logout, endSession]);
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;
 }
 

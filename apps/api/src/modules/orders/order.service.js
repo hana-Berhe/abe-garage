@@ -22,7 +22,7 @@ async function lockOrder(conn, orderId) {
 
 async function getVatRate(conn) {
   const [rows] = await conn.query("SELECT vat_rate FROM garage_settings WHERE settings_id = 1");
-  if (!rows[0]) throw new ApiError(500, "Garage settings are missing. Run /install.");
+  if (!rows[0]) throw new ApiError(500, "Garage settings are missing. Run the installer (POST /api/install).");
   return rows[0].vat_rate;
 }
 
@@ -261,34 +261,44 @@ async function addLine(id, line, employeeId) {
 
 // FR-EST-02, FR-EST-03, FR-EST-05, FR-EST-06. Each approval keeps its method and exact total in the history.
 async function recordApproval(id, { decision, method, note }, employeeId) {
-  await withTransaction(async (conn) => {
+  const completed = await withTransaction(async (conn) => {
     const order = await lockOrder(conn, id);
     if (order.status !== S.AWAITING_APPROVAL) {
       throw new ApiError(400, "Only an order that is Awaiting approval can be approved or declined");
     }
     const [[work]] = await conn.query(
-      "SELECT COUNT(*) AS started FROM order_lines WHERE order_id = ? AND line_status <> ?",
-      [id, L.NOT_STARTED]
+      "SELECT COUNT(*) AS total, SUM(line_status <> ?) AS started, SUM(line_status = ?) AS done FROM order_lines WHERE order_id = ?",
+      [L.NOT_STARTED, L.DONE, id]
     );
+    const started = Number(work.started || 0);
     const suffix = note ? ` · ${note}` : "";
     if (decision === "approve") {
-      const status = work.started > 0 ? S.IN_PROGRESS : S.APPROVED;
+      // BE-033: the status follows the jobs. If every job is already done (the refused extra work was removed),
+      // the order completes now and the "car is ready" email goes out once.
+      const allDone = work.total > 0 && Number(work.done) === work.total;
+      const status = allDone ? S.COMPLETED : started > 0 ? S.IN_PROGRESS : S.APPROVED;
       await conn.query(
-        "UPDATE orders SET status = ?, approved_by = ?, approved_at = UTC_TIMESTAMP(), approval_method = ? WHERE order_id = ?",
-        [status, employeeId, method, id]
+        `UPDATE orders SET status = ?, approved_by = ?, approved_at = UTC_TIMESTAMP(), approval_method = ?,
+           completed_at = IF(? = ${S.COMPLETED}, UTC_TIMESTAMP(), completed_at)
+         WHERE order_id = ?`,
+        [status, employeeId, method, status, id]
       );
       await history.add(conn, id, employeeId, "approved", `${METHOD_LABEL[method]} · total ${order.total}${suffix}`);
-    } else {
-      if (work.started > 0) {
-        throw new ApiError(
-          400,
-          "Work has already started. Remove the new job the customer refused, then record the approval."
-        );
-      }
-      await conn.query("UPDATE orders SET status = ? WHERE order_id = ?", [S.DECLINED, id]);
-      await history.add(conn, id, employeeId, "declined", `${METHOD_LABEL[method]} · total ${order.total}${suffix}`);
+      if (allDone) await history.add(conn, id, null, "completed", `All jobs done · total ${order.total}`);
+      return allDone;
     }
+    if (started > 0) {
+      throw new ApiError(
+        400,
+        "Work has already started. Remove the new job the customer refused, then record the approval of the rest."
+      );
+    }
+    await conn.query("UPDATE orders SET status = ? WHERE order_id = ?", [S.DECLINED, id]);
+    await history.add(conn, id, employeeId, "declined", `${METHOD_LABEL[method]} · total ${order.total}${suffix}`);
+    return false;
   });
+  // After commit: "Your car is ready" (FR-TRK-05).
+  if (completed) await notification.sendOrderEmail(id, "completed");
   return getById(id);
 }
 

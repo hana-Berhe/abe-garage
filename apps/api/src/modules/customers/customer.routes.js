@@ -5,9 +5,9 @@ const controller = require("./customer.controller");
 
 const { TECHNICIAN: T, MANAGER: M, ADMIN: A } = ROLES;
 
-router.post("/api/customer", verifyToken, hasRole([M, A]), ah(controller.create));
+router.post("/api/customers", verifyToken, hasRole([M, A]), ah(controller.create));
 router.get("/api/customers", verifyToken, hasRole([T, M, A]), ah(controller.list));
-router.get("/api/customer/:id", verifyToken, hasRole([T, M, A]), ah(controller.getOne));
-router.put("/api/customer/:id", verifyToken, hasRole([M, A]), ah(controller.update));
+router.get("/api/customers/:id", verifyToken, hasRole([T, M, A]), ah(controller.getOne));
+router.patch("/api/customers/:id", verifyToken, hasRole([M, A]), ah(controller.update));
 
 module.exports = router;

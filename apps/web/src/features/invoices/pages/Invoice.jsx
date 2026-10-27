@@ -6,15 +6,34 @@ import ConfirmDialog from "../../../shared/components/ConfirmDialog";
 import OrderDocument from "../../orders/components/OrderDocument";
 import { dateTime, money } from "../../../shared/lib/format";
 
-// FR-INV-01..07: printable invoice and Mark as paid (cash).
+// FR-INV-01..07, BE-040: issue the invoice once, then print it and mark it paid (cash).
+// An issued invoice is a stored copy: later edits to services, customers or settings do not change it.
 export default function Invoice() {
   const { id } = useParams();
   const [invoice, setInvoice] = useState(null);
   const [error, setError] = useState(null);
   const [confirm, setConfirm] = useState(false);
   const [busy, setBusy] = useState(false);
+  const [canIssue, setCanIssue] = useState(false);
 
-  useEffect(() => { invoiceApi.get(id).then(setInvoice).catch((e) => setError(e.message)); }, [id]);
+  useEffect(() => {
+    invoiceApi.get(id).then(setInvoice).catch((e) => {
+      if (e.data?.issued === false && e.data.can_issue) return setCanIssue(true);
+      setError(e.data?.issued === false ? "The invoice can be issued once every job is done." : e.message);
+    });
+  }, [id]);
+
+  async function issue() {
+    setBusy(true);
+    setError(null);
+    try {
+      setInvoice(await invoiceApi.issue(id));
+    } catch (e) {
+      setError(e.message);
+    } finally {
+      setBusy(false);
+    }
+  }
 
   async function pay() {
     setBusy(true);
@@ -34,8 +53,19 @@ export default function Invoice() {
   if (!invoice) {
     return (
       <>
-        <Alert>{error}</Alert>
-        <Link to={`/admin/order/${id}`} className="btn btn-outline-secondary">Back to order</Link>
+        {canIssue ? (
+          <Alert kind="info">
+            This order is complete. Issuing the invoice stores it exactly as it is now, with invoice number INV-{String(id).padStart(6, "0")}.
+            Later changes to services, the customer or garage settings will not change it.
+          </Alert>
+        ) : (
+          <Alert>{error}</Alert>
+        )}
+        <div className="d-flex gap-2 flex-wrap">
+          <Link to={`/admin/order/${id}`} className="btn btn-outline-secondary">Back to order</Link>
+          {canIssue && <button type="button" className="btn btn-brand" disabled={busy} onClick={issue}>{busy ? "Issuing…" : "Issue invoice"}</button>}
+        </div>
+        {canIssue && error && <div className="mt-3"><Alert>{error}</Alert></div>}
       </>
     );
   }
@@ -52,7 +82,7 @@ export default function Invoice() {
         )}
       </div>
       <Alert>{error}</Alert>
-      <OrderDocument order={invoice} title="Invoice" number={invoice.invoice_number}>
+      <OrderDocument order={invoice} title="Invoice" number={invoice.invoice_number} docDate={invoice.invoice_issued_at}>
         <div className="mt-4 d-flex justify-content-between flex-wrap gap-2">
           <span className="muted small">Order {invoice.order_id} · Payment in cash only</span>
           {invoice.paid ? (

@@ -1,21 +1,21 @@
-import { Link } from "react-router-dom";
 import { useGarage, usePublicServices } from "../useGarage";
 import PageHero from "../components/PageHero";
 import CallBand from "../components/CallBand";
+import CallUs from "../components/CallUs";
 import { duration } from "../components/ServiceCard";
 import Icon, { SERVICE_ICONS } from "../../../shared/components/Icon";
-import { hour12, telHref } from "../../../shared/lib/format";
+import { hour12 } from "../../../shared/lib/format";
 
 const STEPS = [
-  ["Tell us", "Call us or request a call back. Tell us what the car is doing."],
+  ["Tell us", "Call us or drop in. Tell us what the car is doing."],
   ["We check it", "Bring the car in. A mechanic finds the cause."],
   ["You decide", "We call you with the price. Work starts only after you say yes."],
   ["Pick up and pay", "We tell you when it is ready. Pay cash at the desk and get your invoice."],
 ];
 
 const FAQ = [
-  ["How much will my repair cost?", "Every car is different, so we do not list prices on the website. Request a call back or call us. Once we have checked your car, we tell you the price before any work starts."],
-  ["Do I need an appointment?", "No booking is needed. Call us or request a call back and we will agree a time with you. You can also drive in during opening hours."],
+  ["How much will my repair cost?", "Every car is different, so we do not list prices on the website. Call us or drop in. Once we have checked your car, we tell you the price before any work starts."],
+  ["Do I need an appointment?", "No booking is needed. Call us and we will agree a time with you. You can also drive in during opening hours."],
   ["What if you find more problems?", "We stop and call you first. We explain what we found and the price. Nothing extra is done unless you say yes."],
   ["How do I pay?", "Cash only, at the front desk when you pick up your car. You get a printed invoice."],
   ["Can I see how the repair is going?", "Yes. When you drop off your car we email you a private link that shows each step of the work."],
@@ -33,8 +33,7 @@ export default function Services() {
       <PageHero crumb="Services" eyebrow="Our services" title={<>Repairs and servicing,<br /><em>done right.</em></>}>
         <p>What we do every day. Not sure which one you need? Tell us what the car is doing and we will work it out together.</p>
         <div className="actions">
-          <Link className="btn primary" to="/contact#callback">Request a call back <Icon name="up" size={16} stroke={2.5} /></Link>
-          {g.phone && <a className="btn outline" href={telHref(g.phone)}><Icon name="phone" size={16} /> {g.phone}</a>}
+          <CallUs label={g.phone ? `Call ${g.phone}` : "Call us"} />
         </div>
       </PageHero>
 
@@ -50,7 +49,7 @@ export default function Services() {
                 </div>
                 <div className="meta">
                   <span><Icon name="clock" size={16} />{duration(s.labor_hours) || "Depends on the fault"}</span>
-                  <Link className="more" to="/contact#callback">Ask for a price <Icon name="arrow" size={15} stroke={2.5} /></Link>
+                  <CallUs className="more" label="Call for a price" />
                 </div>
               </article>
             ))}
@@ -81,7 +80,7 @@ export default function Services() {
         </div>
       </section>
 
-      <CallBand title="Not sure what your car needs?" text="Describe the problem and we call you back with advice and a price." />
+      <CallBand title="Not sure what your car needs?" text="Call us and describe the problem. We give you advice and a price." />
     </>
   );
 }

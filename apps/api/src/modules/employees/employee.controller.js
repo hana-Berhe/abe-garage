@@ -3,7 +3,10 @@ const { ok, created, badField } = require("../../shared/respond");
 const { readPage } = require("../../shared/pagination");
 const { ROLES } = require("../../middlewares/auth");
 const v = require("../../shared/validate");
+const { mergePatch } = require("../../shared/patch");
 const { readEmployee } = require("./employee.validator");
+
+const EDITABLE = ["email", "first_name", "last_name", "phone", "role_id", "active", "password"];
 
 async function login(req, res) {
   const email = v.requireEmail(req.body);
@@ -16,7 +19,11 @@ async function changePassword(req, res) {
   const oldPassword = v.requireText(req.body, "old_password", "Current password", 72);
   const newPassword = v.requirePassword(req.body, "new_password");
   await employeeService.changePassword(req.employee.id, oldPassword, newPassword);
-  return ok(res, "Password changed");
+  return ok(res, "Password changed. Please log in again.");
+}
+
+async function profile(req, res) {
+  return ok(res, "Get own staff profile successful", await employeeService.getProfile(req.employee.id));
 }
 
 async function create(req, res) {
@@ -45,7 +52,8 @@ async function getOne(req, res) {
 
 async function update(req, res) {
   const id = v.requireId(req.params.id, "id", "Employee id");
-  const data = readEmployee(req.body, { passwordRequired: false });
+  const current = await employeeService.getById(id);
+  const data = readEmployee(mergePatch(current, req.body, EDITABLE), { passwordRequired: false });
   if (!req.body.updated_at || Number.isNaN(Date.parse(req.body.updated_at))) {
     throw badField("updated_at", "updated_at from the loaded record is required");
   }
@@ -54,4 +62,4 @@ async function update(req, res) {
   return ok(res, "Employee saved", employee);
 }
 
-module.exports = { login, changePassword, create, list, getOne, update };
+module.exports = { login, changePassword, profile, create, list, getOne, update };

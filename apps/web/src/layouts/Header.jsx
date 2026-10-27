@@ -3,6 +3,7 @@ import { useGarage } from "../features/website/useGarage";
 import { reviewsToShow } from "../features/website/reviews";
 import Icon from "../shared/components/Icon";
 import { hour12, telHref } from "../shared/lib/format";
+import CallUs from "../features/website/components/CallUs";
 
 export function Brand() {
   return (
@@ -17,7 +18,7 @@ export function Brand() {
 export const hoursText = (g) =>
   g.opening_time ? `Opens ${hour12(g.opening_time)}${g.closing_time ? ` · Closes ${hour12(g.closing_time)}` : ""}` : "";
 
-// There is no online booking. The main action is "Request a call back", which goes to the form on the Contact page.
+// There is no online booking. The main action is phoning the garage.
 export default function Header() {
   const g = useGarage();
   const { pathname } = useLocation();
@@ -38,7 +39,7 @@ export default function Header() {
             {reviewsToShow().reviews.length > 0 && <Link to="/#reviews">Reviews</Link>}
           </div>
           <div className="hright">
-            <Link to="/contact#callback" className="btn primary call-lg">Request a call back <Icon name="up" size={16} stroke={2.5} /></Link>
+            <CallUs className="btn primary call-lg" label={g.phone ? `Call ${g.phone}` : "Call us"} />
             {g.phone && (
               <a href={telHref(g.phone)} className="btn primary menu-call" style={{ padding: "12px 14px", minHeight: 44 }} aria-label="Call the garage">
                 <Icon name="phone" size={18} />
@@ -49,7 +50,6 @@ export default function Header() {
               <summary aria-label="Open menu"><Icon name="menu" size={22} /></summary>
               <div className="panel">
                 {pages.map(([to, label]) => <Link key={to} to={to}>{label}</Link>)}
-                <Link to="/contact#callback" style={{ color: "var(--orange)" }}>Request a call back</Link>
                 {g.phone && <a href={telHref(g.phone)} style={{ color: "var(--orange)" }}>Call {g.phone}</a>}
               </div>
             </details>

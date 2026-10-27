@@ -5,6 +5,9 @@ import Field from "../../../shared/components/Field";
 import Alert from "../../../shared/components/Alert";
 import { ROLE_NAMES } from "../../../shared/constants/roles";
 
+// Shown until the server list arrives, so the form never waits on it.
+const FALLBACK_ROLES = Object.entries(ROLE_NAMES).map(([role_id, role_name]) => ({ role_id: Number(role_id), role_name }));
+
 const EMPTY = { email: "", first_name: "", last_name: "", phone: "", role_id: "1", active: 1, password: "" };
 
 export default function EmployeeForm() {
@@ -14,6 +17,11 @@ export default function EmployeeForm() {
   const [form, setForm] = useState(EMPTY);
   const [error, setError] = useState(null);
   const [busy, setBusy] = useState(false);
+  const [roles, setRoles] = useState(FALLBACK_ROLES);
+
+  useEffect(() => {
+    employeeService.roles().then((d) => setRoles(d.roles)).catch(() => {});
+  }, []);
 
   useEffect(() => {
     if (!editing) return;
@@ -64,8 +72,8 @@ export default function EmployeeForm() {
         </div>
         <Field label="Phone" name="phone" type="tel" value={form.phone} onChange={change} error={fieldError("phone")} />
         <Field label="Role" name="role_id" as="select" value={form.role_id} onChange={change} error={fieldError("role_id")}>
-          {Object.entries(ROLE_NAMES).map(([value, label]) => (
-            <option key={value} value={value}>{label}</option>
+          {roles.map((r) => (
+            <option key={r.role_id} value={String(r.role_id)}>{r.role_name}</option>
           ))}
         </Field>
         <Field

@@ -6,7 +6,7 @@ const COLUMNS = `name, address, phone, email, vat_rate,
 
 async function get() {
   const [rows] = await pool.query(`SELECT ${COLUMNS} FROM garage_settings WHERE settings_id = 1`);
-  if (!rows[0]) throw new ApiError(500, "Garage settings are missing. Run /install.");
+  if (!rows[0]) throw new ApiError(500, "Garage settings are missing. Run the installer (POST /api/install).");
   return rows[0];
 }
 
@@ -29,4 +29,10 @@ async function update(data) {
   return get();
 }
 
-module.exports = { get, getPublic, update };
+// BE-013: the three fixed roles, for the employee form. There is no way to add or change roles.
+async function listRoles() {
+  const [roles] = await pool.query("SELECT role_id, role_name FROM roles ORDER BY role_id");
+  return { roles };
+}
+
+module.exports = { get, getPublic, update, listRoles };

@@ -1,5 +1,5 @@
 // Demo data for local work: staff, customers, cars, services and orders in every state.
-// Run after /install:  npm run seed            (adds ~12 demo orders)
+// Run after POST /api/install:  npm run seed            (adds ~12 demo orders)
 //                      npm run seed -- --orders=1000   (extra orders to test list speed, NFR-09)
 require("dotenv").config({ path: require("path").join(__dirname, "..", "..", ".env") });
 process.env.SMTP_HOST = ""; // never email demo customers
@@ -99,13 +99,15 @@ async function demoOrder(car, serviceIds, stage, staff) {
     if (stage === "in_progress" && i === lines.length - 1) return;
     await orderService.updateLineStatus(line.line_id, { status: 2 }, tech);
   }
-  if (stage === "paid") await invoiceService.markPaid(id, manager.id);
+  if (stage !== "paid") return;
+  await invoiceService.issueInvoice(id, manager.id);
+  await invoiceService.markPaid(id, manager.id);
 }
 
 async function main() {
   const extra = Number((process.argv.find((a) => a.startsWith("--orders=")) || "").split("=")[1] || 0);
   const [[{ n }]] = await pool.query("SELECT COUNT(*) AS n FROM employees WHERE role_id = 3");
-  if (!n) throw new Error("Run GET /install first, then seed.");
+  if (!n) throw new Error("Run POST /api/install first, then seed.");
 
   const staff = await upsertStaff(await bcrypt.hash(PASSWORD, 10));
   const svc = await upsertServices();
@@ -126,23 +128,6 @@ async function main() {
       [1, ["Oil change"], "paid"],
     ];
     for (const [car, names, stage] of plan) await demoOrder(cars[car], names.map((x) => svc[x]), stage, staff);
-  }
-  const [[{ callbacks }]] = await pool.query("SELECT COUNT(*) AS callbacks FROM callback_requests");
-  if (callbacks === 0) {
-    // [name, phone, car, service or null for "Not sure", problem, best time, already called]
-    const requests = [
-      ["Hanna Girma", "+251 911 000 233", "2016 Toyota Vitz", "Brakes", "Squeaking noise when I brake, mostly in the morning.", "morning", false],
-      ["Daniel Okafor", "+251 911 000 418", "2012 Nissan X-Trail", null, "Engine light came on yesterday. Can I bring it before work?", "any", false],
-      ["Mia Tan", "+251 911 000 561", "2019 Kia Picanto", "Full service", "Would like a quote for a full service.", "afternoon", false],
-      ["Peter Wolde", "+251 911 000 377", "2014 Mazda 3", "Wheel alignment", "Car pulls to the left.", "any", true],
-    ];
-    for (const [name, phone, car, service, problem, bestTime, called] of requests) {
-      await pool.query(
-        `INSERT INTO callback_requests (full_name, phone, car, service_id, problem, best_time, status, called_by, called_at)
-         VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)`,
-        [name, phone, car, service ? svc[service] : null, problem, bestTime, called ? 1 : 0, called ? staff.Dana : null, called ? new Date() : null]
-      );
-    }
   }
   for (let i = 0; i < extra; i++) {
     await demoOrder(cars[i % cars.length], [svc["Oil change"]], ["awaiting", "paid", "completed"][i % 3], staff);
