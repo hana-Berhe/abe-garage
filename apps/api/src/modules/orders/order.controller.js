@@ -1,8 +1,8 @@
 const orderService = require("./order.service");
-const { ok, created, badField } = require("../../shared/respond");
+const { ok, created, badField, ApiError } = require("../../shared/respond");
 const { readPage } = require("../../shared/pagination");
 const { readUpdatedAt } = require("../../shared/stale-check");
-const { APPROVAL_METHODS } = require("../../shared/order-codes");
+const { APPROVAL_METHODS, ORDER_STATUS } = require("../../shared/order-codes");
 const v = require("../../shared/validate");
 const { mergePatch } = require("../../shared/patch");
 const { ROLES } = require("../../middlewares/auth");
@@ -28,12 +28,34 @@ async function create(req, res) {
   return created(res, "Order created", order);
 }
 
+// ?paid=true|false (or 1|0); missing means either.
+function queryFlag(query, field) {
+  const value = query[field];
+  if (value === undefined || value === "") return null;
+  if (value === "true" || value === "1") return true;
+  if (value === "false" || value === "0") return false;
+  throw badField(field, `${field} must be true or false`);
+}
+
+const queryId = (query, field, label) => (query[field] === undefined || query[field] === "" ? null : v.requireId(query[field], field, label));
+
+// BE-030: status, paid, customer_id, vehicle_id and unpaid_only (completed and not yet paid).
 async function list(req, res) {
   const page = readPage(req.query);
   const status = req.query.status ? Number(req.query.status) : null;
   if (status !== null && !(status >= 1 && status <= 5)) throw badField("status", "Unknown status");
-  const paid = req.query.paid === "1" ? true : req.query.paid === "0" ? false : null;
-  return ok(res, "Orders", await orderService.list({ ...page, status, paid }));
+  const paid = queryFlag(req.query, "paid");
+  const unpaidOnly = queryFlag(req.query, "unpaid_only") === true;
+  if (unpaidOnly && (paid === true || (status !== null && status !== 4))) {
+    throw badField("unpaid_only", "Unpaid (completed) only covers completed orders that aren't paid, so it can't be combined with Paid or another status");
+  }
+  const filters = {
+    status: unpaidOnly ? 4 : status,
+    paid: unpaidOnly ? false : paid,
+    customerId: queryId(req.query, "customer_id", "Customer"),
+    vehicleId: queryId(req.query, "vehicle_id", "Car"),
+  };
+  return ok(res, "Orders", await orderService.list({ ...page, ...filters }));
 }
 
 async function getOne(req, res) {
@@ -53,7 +75,13 @@ async function update(req, res) {
   const merged = mergePatch(current, req.body, EDITABLE);
   const data = readNotes(merged);
   // Only a changed date is checked, so an order whose date has passed can still get a new note.
-  if (data.estimated_ready_date !== current.estimated_ready_date) checkReadyDate(data.estimated_ready_date);
+  if (data.estimated_ready_date !== current.estimated_ready_date) {
+    // BE-032: once completed the car is ready, so the date stays; notes can still change.
+    if (current.status === ORDER_STATUS.COMPLETED) {
+      throw new ApiError(409, "The order is completed, so its ready date can't change", { field: "estimated_ready_date" });
+    }
+    checkReadyDate(data.estimated_ready_date);
+  }
   if (req.body.lines !== undefined) data.lines = readLines(req.body, { allowEmpty: true });
   return ok(res, "Order saved", await orderService.update(id, data, readUpdatedAt(req.body), req.employee.id));
 }

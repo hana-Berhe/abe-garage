@@ -14,4 +14,7 @@ function pageResult(rows, total, page, limit = PAGE_SIZE) {
   return { rows, total, page, page_size: limit, pages: Math.max(1, Math.ceil(total / limit)) };
 }
 
-module.exports = { readPage, pageResult, PAGE_SIZE };
+// A search typed as "%" or "_" means those characters, not "anything" (LIKE wildcards are escaped).
+const likePattern = (search) => `%${search.replace(/[\\%_]/g, (c) => `\\${c}`)}%`;
+
+module.exports = { readPage, pageResult, likePattern, PAGE_SIZE };

@@ -1,7 +1,7 @@
 const invoiceService = require("./invoice.service");
 const notification = require("../orders/notification.service");
 const orderService = require("../orders/order.service");
-const { ok, created } = require("../../shared/respond");
+const { ok, created, badField } = require("../../shared/respond");
 const { ORDER_STATUS: S } = require("../../shared/order-codes");
 const v = require("../../shared/validate");
 
@@ -17,8 +17,10 @@ async function issue(req, res) {
   return result.created ? created(res, "Invoice issued", result.invoice) : ok(res, "Invoice already issued", result.invoice);
 }
 
+// BE-042: the body may be { "paid": true } (or empty). Nothing else: no partial payment or undo.
 async function markPaid(req, res) {
   const id = v.requireId(req.params.id, "id", "Order id");
+  if (req.body.paid !== undefined && req.body.paid !== true) throw badField("paid", "Only paid: true can be recorded");
   return ok(res, "Paid in cash", await invoiceService.markPaid(id, req.employee.id));
 }
 

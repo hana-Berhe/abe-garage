@@ -33,7 +33,7 @@ export default function ForgotPassword() {
         <div className="form">
           <h3>Check your email</h3>
           <p className="sub">If <strong>{sent}</strong> belongs to an active staff account, we have sent it a link to choose a new password. The link works once, for 15 minutes.</p>
-          <p className="note"><Icon name="info" size={16} /><span>Nothing arrived? Check your spam folder, or ask the garage admin to set a new password for you.</span></p>
+          <p className="note"><Icon name="info" size={16} /><span>Nothing arrived? Check your spam folder. If it still doesn't come, ask the garage admin to check that the garage's email is set up.</span></p>
           <Link to="/login" className="btn primary" style={{ width: "100%", marginTop: 22 }}>Back to sign in</Link>
         </div>
       ) : (

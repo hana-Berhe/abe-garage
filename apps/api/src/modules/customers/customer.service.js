@@ -1,6 +1,6 @@
 const { pool, withTransaction } = require("../../config/db");
 const { ApiError } = require("../../shared/respond");
-const { pageResult } = require("../../shared/pagination");
+const { pageResult, likePattern } = require("../../shared/pagination");
 const { duplicateError } = require("../../shared/duplicate");
 const vehicleService = require("../vehicles/vehicle.service");
 
@@ -37,7 +37,7 @@ async function list({ page, search, limit, offset, activeOnly }) {
   const where = [];
   const params = [];
   if (search) {
-    const like = `%${search}%`;
+    const like = likePattern(search);
     where.push(`(c.first_name LIKE ? OR c.last_name LIKE ? OR CONCAT(c.first_name, ' ', c.last_name) LIKE ?
       OR c.email LIKE ? OR c.phone LIKE ?
       OR EXISTS (SELECT 1 FROM vehicles v WHERE v.customer_id = c.customer_id AND v.plate LIKE ?))`);
