@@ -21,8 +21,12 @@ async function insert(conn, v) {
 
 // FR-VEH-01, FR-VEH-02
 async function create(vehicle) {
-  const [owner] = await pool.query("SELECT customer_id FROM customers WHERE customer_id = ?", [vehicle.customer_id]);
-  if (!owner[0]) throw new ApiError(400, "Customer not found", { field: "customer_id" });
+  // BE-020: 404 for a missing customer, 409 for a switched-off one.
+  const [owner] = await pool.query("SELECT active FROM customers WHERE customer_id = ?", [vehicle.customer_id]);
+  if (!owner[0]) throw new ApiError(404, "Customer not found", { field: "customer_id" });
+  if (!owner[0].active) {
+    throw new ApiError(409, "This customer is switched off. Switch them back on to add a car.", { field: "customer_id" });
+  }
   try {
     const id = await insert(pool, vehicle);
     return getById(id);
@@ -65,9 +69,17 @@ async function getWithHistory(id) {
   return { ...vehicle, orders };
 }
 
+// BE-023: the odometer only goes up, so a lower mileage is a typing mistake (409).
+function checkMileage(saved, next) {
+  if (saved != null && next != null && next < saved) {
+    throw new ApiError(409, `Mileage can't go lower than the saved ${saved.toLocaleString("en-US")} km`, { field: "mileage" });
+  }
+}
+
 // FR-VEH-03. A car never moves to another customer, so customer_id is not editable.
 async function update(id, v, updatedAt) {
   const current = await getById(id);
+  checkMileage(current.mileage, v.mileage);
   let result;
   try {
     [result] = await pool.query(
@@ -86,4 +98,4 @@ async function update(id, v, updatedAt) {
   return getById(id);
 }
 
-module.exports = { DUPLICATES, insert, create, listForCustomer, getById, getWithHistory, update };
+module.exports = { DUPLICATES, checkMileage, insert, create, listForCustomer, getById, getWithHistory, update };

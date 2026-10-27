@@ -1,3 +1,4 @@
+const crypto = require("crypto");
 const bcrypt = require("bcrypt");
 const jwt = require("jsonwebtoken");
 const { pool, withTransaction } = require("../../config/db");
@@ -8,6 +9,10 @@ const { ROLES } = require("../../middlewares/auth");
 const PUBLIC_COLUMNS = `e.employee_id, e.email, e.first_name, e.last_name, e.phone, e.role_id, r.role_name,
   e.active, e.created_at, e.updated_at`;
 
+// Same cost (10) as real password hashes, made once at start-up. No password matches it in practice.
+const DUMMY_HASH = bcrypt.hashSync(crypto.randomBytes(16).toString("hex"), 10);
+
+// BE-004: logins last 1 hour unless JWT_EXPIRES_IN says otherwise.
 function makeToken(employee) {
   return jwt.sign(
     {
@@ -17,7 +22,7 @@ function makeToken(employee) {
       name: `${employee.first_name} ${employee.last_name}`,
     },
     process.env.JWT_SECRET,
-    { expiresIn: process.env.JWT_EXPIRES_IN || "24h" }
+    { expiresIn: process.env.JWT_EXPIRES_IN || "1h" }
   );
 }
 
@@ -28,7 +33,9 @@ async function login(email, password) {
     [email]
   );
   const employee = rows[0];
-  const passwordOk = employee ? await bcrypt.compare(password, employee.password_hash) : false;
+  // BE-004: an unknown email still runs one bcrypt check, so it takes as long as a wrong password.
+  const passwordOk = await bcrypt.compare(password, employee ? employee.password_hash : DUMMY_HASH);
+  if (!employee) throw new ApiError(401, "Email or password is wrong");
   if (!passwordOk) throw new ApiError(401, "Email or password is wrong");
   if (!employee.active) throw new ApiError(403, "Account disabled");
 

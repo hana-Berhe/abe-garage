@@ -78,7 +78,6 @@ export default function MyJobs() {
               <div><div className="fw-semibold">{j.year} {j.make} {j.model}</div><div className="muted small">{j.color}</div></div>
               <span className="plate">{j.plate}</span>
             </div>
-            {j.internal_notes && <p className="small mb-2"><strong>Desk note:</strong> {j.internal_notes}</p>}
             {j.technician_note && <p className="small mb-2"><strong>My note:</strong> {j.technician_note}</p>}
             {j.line_status === 0 && (
               <button type="button" className="btn btn-ink btn-xl w-100" disabled={busy === j.line_id || waiting} onClick={() => change(j, 1)}>Start job</button>

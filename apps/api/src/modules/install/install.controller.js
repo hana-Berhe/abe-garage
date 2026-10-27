@@ -1,9 +1,9 @@
 const installService = require("./install.service");
-const { ok } = require("../../shared/respond");
+const { created } = require("../../shared/respond");
 
 async function install(req, res) {
-  const data = await installService.install();
-  return ok(res, "Installed. You can now log in as the admin.", data);
+  const data = await installService.install(req.get("x-setup-key"));
+  return created(res, "Installed. You can now log in as the admin.", data);
 }
 
 module.exports = { install };

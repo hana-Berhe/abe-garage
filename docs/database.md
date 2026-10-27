@@ -36,7 +36,7 @@ mysql -u root -p -e "CREATE DATABASE abe_garage CHARACTER SET utf8mb4;
   GRANT ALL ON abe_garage.* TO 'abe'@'localhost';"
 cp apps/api/.env.example apps/api/.env      # fill in DB_* and INSTALL_ADMIN_*
 npm run dev:api
-curl -X POST http://localhost:8000/api/install  # once: tables, roles, settings, first admin
+curl -X POST -H "X-Setup-Key: <INSTALL_SECRET>" http://localhost:8000/api/install  # once: tables, roles, settings, first admin
 npm run seed                                  # optional demo data
 ```
 
@@ -54,4 +54,4 @@ After `003`, orders that were already paid have no saved invoice. A manager can 
 
 `004` removes the old `callback_requests` table from the website call-back form, which no longer exists. It deletes any saved requests, so back them up first if you want to keep them (the file shows how). A database that never had the table can skip it.
 
-`POST /api/install` locks itself once any staff account exists (it then answers 403).
+`POST /api/install` locks itself once any staff account exists (it then answers 403). It only works while `INSTALL_ENABLED=true` and with the `X-Setup-Key` header set to `INSTALL_SECRET` (16 characters or more). Set `INSTALL_ENABLED=false` on a live server once setup is done.

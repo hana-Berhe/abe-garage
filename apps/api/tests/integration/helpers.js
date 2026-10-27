@@ -11,6 +11,8 @@ process.env.JWT_SECRET = process.env.JWT_SECRET || "integration_test_secret_0123
 process.env.JWT_EXPIRES_IN = "1h";
 process.env.INSTALL_ADMIN_EMAIL = "admin@test.local";
 process.env.INSTALL_ADMIN_PASSWORD = "AdminPass123";
+process.env.INSTALL_ENABLED = "true";
+process.env.INSTALL_SECRET = "integration_setup_key_0123456789";
 process.env.APP_TIMEZONE = process.env.APP_TIMEZONE || "Africa/Addis_Ababa";
 process.env.CLIENT_URL = "http://localhost:5173";
 delete process.env.SMTP_HOST;
@@ -40,10 +42,10 @@ async function resetDatabase() {
 
 const ctx = { base: null, server: null, pool: null };
 
-async function api(method, url, token, body) {
+async function api(method, url, token, body, headers = {}) {
   const res = await fetch(ctx.base + url, {
     method,
-    headers: { "content-type": "application/json", ...(token ? { "x-access-token": token } : {}) },
+    headers: { "content-type": "application/json", ...(token ? { "x-access-token": token } : {}), ...headers },
     body: body === undefined ? undefined : typeof body === "string" ? body : JSON.stringify(body),
   });
   const json = await res.json().catch(() => null);
@@ -69,8 +71,8 @@ function useApp() {
       ctx.server = app.listen(0, "127.0.0.1", resolve);
     });
     ctx.base = `http://127.0.0.1:${ctx.server.address().port}`;
-    const installed = await api("POST", "/api/install");
-    if (installed.code !== 201 && installed.code !== 200) throw new Error(`install: ${installed.code} ${installed.message}`);
+    const installed = await api("POST", "/api/install", null, undefined, { "x-setup-key": process.env.INSTALL_SECRET });
+    if (installed.code !== 201) throw new Error(`install: ${installed.code} ${installed.message}`);
     f.admin = await login("admin@test.local", "AdminPass123");
     const staff = async (email, role_id, first_name) => {
       const r = await api("POST", "/api/employees", f.admin, { email, first_name, last_name: "Test", password: "Password123", role_id });

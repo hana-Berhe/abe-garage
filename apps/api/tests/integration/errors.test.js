@@ -49,8 +49,9 @@ test("an error thrown inside an async handler is caught and shaped", async () =>
   shape(r);
 });
 
-test("health check answers", async () => {
+test("health check answers ready", async () => {
   const r = await api("GET", "/api/health");
   assert.equal(r.code, 200);
   assert.equal(r.status, "success");
+  assert.deepEqual(r.data, { service: "abe-garage-api", ready: true });
 });
