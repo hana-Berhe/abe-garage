@@ -7,6 +7,7 @@ const { ORDER_STATUS: S, LINE_STATUS: L } = require("../../shared/order-codes");
 const { ROLES } = require("../../middlewares/auth");
 const history = require("./history.service");
 const serviceService = require("../services/service.service");
+const vehicleService = require("../vehicles/vehicle.service");
 const notification = require("./notification.service");
 
 const METHOD_LABEL = { in_person: "in person", phone: "by phone" };
@@ -114,6 +115,8 @@ async function create(data, employeeId) {
     );
     await insertLines(conn, result.insertId, lines);
     if (data.mileage != null) {
+      const [[car]] = await conn.query("SELECT mileage FROM vehicles WHERE vehicle_id = ? FOR UPDATE", [data.vehicle_id]);
+      vehicleService.checkMileage(car.mileage, data.mileage);
       await conn.query("UPDATE vehicles SET mileage = ? WHERE vehicle_id = ?", [data.mileage, data.vehicle_id]);
     }
     await history.add(conn, result.insertId, employeeId, "created", `Estimate total ${totals.total}`);
@@ -196,6 +199,18 @@ async function getById(id) {
   return order;
 }
 
+// BE-031: a technician may read any order, but not the customer's email and phone, the internal note or the
+// status link code. Email history lines name the customer's address, so their detail is left out too.
+const TECHNICIAN_HIDDEN = ["email", "phone", "internal_notes", "order_hash"];
+function technicianView(order) {
+  const view = { ...order };
+  for (const key of TECHNICIAN_HIDDEN) delete view[key];
+  view.history = order.history.map((h) =>
+    h.action === "email_sent" || h.action === "email_failed" ? { ...h, details: null } : h
+  );
+  return view;
+}
+
 // BE-039: only what goes on the printed estimate. Uses the prices saved on the order, never today's price list,
 // and leaves out internal notes, technician notes, the status link code and the history. Reading changes nothing.
 async function getEstimate(id) {
@@ -262,19 +277,59 @@ async function update(id, data, updatedAt, employeeId) {
       if (order.status !== S.AWAITING_APPROVAL) {
         throw new ApiError(400, "Jobs and prices can only change while the order is Awaiting approval", { field: "lines" });
       }
-      const [kept] = await conn.query(
-        "SELECT service_id, description, line_price FROM order_lines WHERE order_id = ? AND line_status <> ?",
-        [id, L.NOT_STARTED]
-      );
-      const newLines = await buildLines(conn, data.lines);
+      const [current] = await conn.query("SELECT * FROM order_lines WHERE order_id = ? FOR UPDATE", [id]);
+      const kept = current.filter((l) => l.line_status !== L.NOT_STARTED);
+      const newLines = (await buildLines(conn, data.lines)).map((l, i) => ({ ...l, line_id: data.lines[i].line_id }));
       if (sameServiceTwice([...kept, ...newLines])) {
         throw new ApiError(400, "A service can be added once per order. Add a second one as an extra item.", {
           field: "lines",
         });
       }
       if (kept.length + newLines.length === 0) throw new ApiError(400, "An order needs at least one job", { field: "lines" });
-      await conn.query("DELETE FROM order_lines WHERE order_id = ? AND line_status = ?", [id, L.NOT_STARTED]);
-      await insertLines(conn, id, newLines);
+
+      // BE-032: change jobs in place, so each job keeps its number and its technician.
+      // A line is matched by its line_id, or else by the same service (or the same extra item text).
+      const open = current.filter((l) => l.line_status === L.NOT_STARTED);
+      const used = new Set();
+      const matchFor = (l, i) => {
+        if (l.line_id) {
+          const byId = open.find((o) => o.line_id === l.line_id);
+          if (!byId || used.has(byId.line_id)) {
+            throw new ApiError(400, "This job has started or is not on this order. Reload the order.", {
+              field: `lines.${i}.line_id`,
+            });
+          }
+          return byId;
+        }
+        return open.find(
+          (o) => !used.has(o.line_id) && (l.service_id ? o.service_id === l.service_id : !o.service_id && o.description === l.description)
+        );
+      };
+      const changes = newLines.map((l, i) => {
+        const match = matchFor(l, i);
+        if (match) used.add(match.line_id);
+        return { line: l, match };
+      });
+      for (const o of open.filter((o) => !used.has(o.line_id))) {
+        await conn.query("DELETE FROM order_lines WHERE line_id = ?", [o.line_id]);
+      }
+      for (const { line, match } of changes) {
+        if (!match) {
+          await insertLines(conn, id, [line]);
+        } else if (match.service_id !== line.service_id) {
+          // A different job on the same line: the old technician was chosen for the old job.
+          await conn.query(
+            "UPDATE order_lines SET service_id = ?, description = ?, line_price = ?, technician_id = NULL WHERE line_id = ?",
+            [line.service_id, line.description, line.line_price, match.line_id]
+          );
+        } else {
+          await conn.query("UPDATE order_lines SET description = ?, line_price = ? WHERE line_id = ?", [
+            line.description,
+            line.line_price,
+            match.line_id,
+          ]);
+        }
+      }
       const totals = await recalculate(conn, order);
       await history.add(conn, id, employeeId, "edited", `Jobs changed · total ${totals.total}`);
     } else {
@@ -446,7 +501,7 @@ async function myJobs(technicianId) {
   const [rows] = await pool.query(
     `SELECT l.line_id, l.order_id, COALESCE(s.name, l.description) AS name, s.labor_hours, l.line_status,
        l.started_at, l.done_at, l.technician_note, o.status AS order_status, o.estimated_ready_date,
-       o.notes_for_customer, o.internal_notes, v.year, v.make, v.model, v.plate, v.color
+       o.notes_for_customer, v.year, v.make, v.model, v.plate, v.color
      FROM order_lines l
      JOIN orders o ON o.order_id = l.order_id
      JOIN vehicles v ON v.vehicle_id = o.vehicle_id
@@ -464,6 +519,7 @@ module.exports = {
   create,
   list,
   getById,
+  technicianView,
   getEstimate,
   update,
   addLine,

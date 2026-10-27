@@ -178,7 +178,7 @@ export default function NewOrder() {
                 onChange={(e) => setNotes({ ...notes, estimated_ready_date: e.target.value })} error={fieldError("estimated_ready_date")} />
               <Field label="Note for the customer (shown on their status page)" name="notes_for_customer" as="textarea" rows={2}
                 value={notes.notes_for_customer} onChange={(e) => setNotes({ ...notes, notes_for_customer: e.target.value })} error={fieldError("notes_for_customer")} />
-              <Field label="Internal note (staff only)" name="internal_notes" as="textarea" rows={2}
+              <Field label="Internal note (office only, technicians don't see it)" name="internal_notes" as="textarea" rows={2}
                 value={notes.internal_notes} onChange={(e) => setNotes({ ...notes, internal_notes: e.target.value })} error={fieldError("internal_notes")} />
             </div>
           )}

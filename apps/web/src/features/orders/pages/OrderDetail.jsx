@@ -94,12 +94,15 @@ export default function OrderDetail() {
   };
 
   // FR-ORD-07: resend the not-started lines with one changed or removed; the server reprices and keeps started ones.
+  // Each line carries its line_id, so jobs keep their numbers and technicians (BE-032).
   const saveLines = (lineId, remove) => {
     const lines = order.lines
       .filter((l) => l.line_status === 0 && !(remove && l.line_id === lineId))
       .map((l) => {
         const price = l.line_id === lineId ? editLine.price : l.line_price;
-        return l.service_id ? { service_id: l.service_id, price } : { description: l.description, price };
+        return l.service_id
+          ? { line_id: l.line_id, service_id: l.service_id, price }
+          : { line_id: l.line_id, description: l.description, price };
       });
     return act(() => orderService.update(id, {
       lines,
@@ -134,7 +137,7 @@ export default function OrderDetail() {
       <Alert>{error?.message}</Alert>
 
       <div className="d-flex gap-2 flex-wrap mb-4 no-print">
-        <button type="button" className="btn btn-outline-secondary" onClick={copyLink}>Copy status link</button>
+        {order.order_hash && <button type="button" className="btn btn-outline-secondary" onClick={copyLink}>Copy status link</button>}
         {office && order.status !== 5 && (
           <button type="button" className="btn btn-outline-secondary" disabled={busy} onClick={async () => {
             setBusy(true);
@@ -261,12 +264,15 @@ export default function OrderDetail() {
                 <p className="mb-0" style={{ whiteSpace: "pre-wrap" }}>{order.notes_for_customer || <span className="muted">None</span>}</p>
               </div>
             </div>
-            <div className="col-md-6">
-              <div className="ag-card h-100">
-                <h2 className="h5">Internal note <span className="muted text-lowercase fw-normal">(staff only)</span></h2>
-                <p className="mb-0" style={{ whiteSpace: "pre-wrap" }}>{order.internal_notes || <span className="muted">None</span>}</p>
+            {/* Technicians don't receive the internal note (BE-031). */}
+            {"internal_notes" in order && (
+              <div className="col-md-6">
+                <div className="ag-card h-100">
+                  <h2 className="h5">Internal note <span className="muted text-lowercase fw-normal">(office only)</span></h2>
+                  <p className="mb-0" style={{ whiteSpace: "pre-wrap" }}>{order.internal_notes || <span className="muted">None</span>}</p>
+                </div>
               </div>
-            </div>
+            )}
           </div>
           {office && order.status !== 5 && (
             <button type="button" className="btn btn-outline-secondary mt-3" onClick={() => setNotes({
@@ -283,7 +289,7 @@ export default function OrderDetail() {
               <span className="rounded-circle d-inline-grid text-white fw-bold" style={{ width: 44, height: 44, placeItems: "center", background: "var(--ag-ink)" }}>{initials(order.first_name, order.last_name)}</span>
               <div>
                 <Link to={`/admin/customer/${order.customer_id}`}>{order.first_name} {order.last_name}</Link>
-                <div className="muted small">{order.phone}</div>
+                {order.phone && <div className="muted small">{order.phone}</div>}
               </div>
             </div>
             <hr />
@@ -294,7 +300,7 @@ export default function OrderDetail() {
               </div>
               <span className="plate align-self-start">{order.plate}</span>
             </div>
-            <a href={`tel:${order.phone}`} className="btn btn-outline-secondary w-100 mt-3">Call {order.first_name}</a>
+            {order.phone && <a href={`tel:${order.phone}`} className="btn btn-outline-secondary w-100 mt-3">Call {order.first_name}</a>}
           </div>
           <div className="ag-card">
             <h2 className="h5">History</h2>
@@ -399,7 +405,7 @@ export default function OrderDetail() {
             <Modal.Body>
               <Field label="Estimated ready date" name="estimated_ready_date" type="date" value={notes.estimated_ready_date} onChange={(e) => setNotes({ ...notes, estimated_ready_date: e.target.value })} />
               <Field label="Note for the customer" name="notes_for_customer" as="textarea" rows={3} value={notes.notes_for_customer} onChange={(e) => setNotes({ ...notes, notes_for_customer: e.target.value })} />
-              <Field label="Internal note (staff only)" name="internal_notes" as="textarea" rows={3} value={notes.internal_notes} onChange={(e) => setNotes({ ...notes, internal_notes: e.target.value })} />
+              <Field label="Internal note (office only, technicians don't see it)" name="internal_notes" as="textarea" rows={3} value={notes.internal_notes} onChange={(e) => setNotes({ ...notes, internal_notes: e.target.value })} />
             </Modal.Body>
             <Modal.Footer>
               <button type="button" className="btn btn-outline-secondary" onClick={() => setNotes(null)}>Cancel</button>

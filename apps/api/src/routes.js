@@ -1,6 +1,7 @@
 // Each module adds only its own line here.
 const router = require("express").Router();
 
+router.use(require("./modules/health/health.routes"));
 router.use(require("./modules/install/install.routes"));
 router.use(require("./modules/employees/employee.routes"));
 router.use(require("./modules/auth/password-reset.routes"));

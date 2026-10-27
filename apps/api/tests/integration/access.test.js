@@ -126,5 +126,7 @@ test("wrong passwords are limited: the 6th try for one email gets 429", async ()
 });
 
 test("setup locks itself once installed", async () => {
-  assert.equal((await api("POST", "/api/install")).code, 403);
+  const r = await api("POST", "/api/install", null, undefined, { "x-setup-key": process.env.INSTALL_SECRET });
+  assert.equal(r.code, 403);
+  assert.match(r.message, /already installed/);
 });

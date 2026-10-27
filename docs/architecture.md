@@ -32,7 +32,7 @@ apps/api/
 └── tests/unit/                node:test unit tests
 ```
 
-Modules: `install`, `employees`, `settings`, `customers`, `vehicles`, `services`, `orders` (orders, approval, technician jobs, history, emails), `invoices`, `public`, `dashboard`.
+Modules: `health`, `install`, `employees`, `settings`, `customers`, `vehicles`, `services`, `orders` (orders, approval, technician jobs, history, emails), `invoices`, `public`, `dashboard`.
 
 A module uses another module through its service, never by writing to that module's tables.
 
@@ -62,7 +62,7 @@ Pages never call `fetch` and never hold business rules. Money shown before savin
 
 | Concern | Rule |
 | --- | --- |
-| Login | bcrypt check, then a JWT valid 24 h holding id, role and name |
+| Login | bcrypt check (also for unknown emails, so both take as long), then a JWT valid 1 hour holding id, role, name and token version |
 | Roles | `hasRole([...])` on every staff route; the server check is the real one |
 | Input | checked in the validator; 400 with `{ field }` so the form shows it under the right input |
 | Answers | `{ status, message, data }` with the right HTTP code |

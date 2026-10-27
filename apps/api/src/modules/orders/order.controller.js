@@ -5,6 +5,7 @@ const { readUpdatedAt } = require("../../shared/stale-check");
 const { APPROVAL_METHODS } = require("../../shared/order-codes");
 const v = require("../../shared/validate");
 const { mergePatch } = require("../../shared/patch");
+const { ROLES } = require("../../middlewares/auth");
 const { readLine, readLines, readNotes } = require("./order.validator");
 
 const EDITABLE = ["estimated_ready_date", "notes_for_customer", "internal_notes", "lines"];
@@ -37,7 +38,7 @@ async function list(req, res) {
 async function getOne(req, res) {
   const id = v.requireId(req.params.id, "id", "Order id");
   const order = await orderService.getById(id);
-  return ok(res, "Order", order);
+  return ok(res, "Order", req.employee.role === ROLES.TECHNICIAN ? orderService.technicianView(order) : order);
 }
 
 async function estimate(req, res) {
