@@ -9,7 +9,7 @@ MySQL 8, InnoDB, utf8mb4. The whole schema is in [`apps/api/db/schema.sql`](../a
 | `roles` | 1 Technician, 2 Manager, 3 Admin |
 | `employees` | staff accounts (bcrypt password hash, role, active flag, and a `token_version` that goes up to sign the person out everywhere) |
 | `customers` | car owners; email and phone are unique |
-| `vehicles` | cars; plate and VIN are unique; each belongs to one customer |
+| `vehicles` | cars; the plate is unique, the VIN is optional (up to 32 characters, not unique); each belongs to one customer |
 | `services` | the price list (price before VAT, labor hours, active flag) |
 | `orders` | one visit of one car: status 1 to 5, paid flag, copied VAT rate and money totals, order hash, and once issued the invoice number, who issued it and when, and a frozen copy of the invoice (`invoice_snapshot`) |
 | `order_lines` | the jobs in an order, with a copied price, one technician and a status (0 Not started, 1 Started, 2 Done) |
@@ -18,7 +18,7 @@ MySQL 8, InnoDB, utf8mb4. The whole schema is in [`apps/api/db/schema.sql`](../a
 
 ## Rules the database enforces
 
-- Unique: staff email, customer email and phone, car plate and VIN, service name, order hash, invoice number.
+- Unique: staff email, customer email and phone, car plate, service name, order hash, invoice number.
 - An order's `(vehicle_id, customer_id)` must match a car of that customer.
 - `status` 1 to 5, `line_status` 0 to 2, prices of 0 or more.
 - `paid` can only be 1 when `status` is 4 (Completed).
@@ -45,6 +45,7 @@ An existing database needs each newer change once, in order (skip any it already
 mysql -u abe -p abe_garage < apps/api/db/migrations/002_employee_token_version.sql
 mysql -u abe -p abe_garage < apps/api/db/migrations/003_permanent_invoices.sql
 mysql -u abe -p abe_garage < apps/api/db/migrations/004_drop_callback_requests.sql
+mysql -u abe -p abe_garage < apps/api/db/migrations/005_vin_optional_32.sql
 ```
 
 After `003`, orders that were already paid have no saved invoice. A manager can issue it from the order's invoice page.
