@@ -1,11 +1,14 @@
 const { ok, created, badField } = require("../../shared/respond");
 const v = require("../../shared/validate");
 
+// Money is never rounded quietly: at most two decimals, or the field is refused.
 function readMoney(body, field, label) {
-  const n = Number(body[field]);
-  if (body[field] === "" || body[field] == null || !Number.isFinite(n) || n < 0 || n > 99999999) {
+  const raw = body[field];
+  const n = Number(raw);
+  if (raw === "" || raw == null || !Number.isFinite(n) || n < 0 || n > 99999999) {
     throw badField(field, `${label} must be a number of 0 or more`);
   }
+  if (!/^\d+(\.\d{1,2})?$/.test(String(raw).trim())) throw badField(field, `${label} can have at most two decimals`);
   return n.toFixed(2);
 }
 

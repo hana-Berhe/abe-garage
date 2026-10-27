@@ -1,7 +1,7 @@
 const crypto = require("crypto");
 const { pool, withTransaction } = require("../../config/db");
 const { ApiError } = require("../../shared/respond");
-const { pageResult } = require("../../shared/pagination");
+const { pageResult, likePattern } = require("../../shared/pagination");
 const { calculateTotals } = require("../../shared/money");
 const { ORDER_STATUS: S, LINE_STATUS: L } = require("../../shared/order-codes");
 const { ROLES } = require("../../middlewares/auth");
@@ -134,20 +134,18 @@ async function create(data, employeeId) {
   return order;
 }
 
-// FR-ORD-05: filter by status and paid, search by customer, phone or plate.
-async function list({ page, search, limit, offset, status, paid }) {
+// FR-ORD-05, BE-030: filter by status, paid, customer and car; search by customer, phone or plate.
+async function list({ page, search, limit, offset, status, paid, customerId, vehicleId }) {
   const where = [];
   const params = [];
-  if (status) {
-    where.push("o.status = ?");
-    params.push(status);
-  }
-  if (paid !== null) {
-    // "Unpaid" means completed and not yet paid (FR-INV-04).
-    where.push(paid ? "o.paid = 1" : "o.paid = 0 AND o.status = 4");
+  const filters = [["o.status", status], ["o.paid", paid === null ? null : Number(paid)], ["o.customer_id", customerId], ["o.vehicle_id", vehicleId]];
+  for (const [column, value] of filters) {
+    if (value === null || value === undefined) continue;
+    where.push(`${column} = ?`);
+    params.push(value);
   }
   if (search) {
-    const like = `%${search}%`;
+    const like = likePattern(search);
     where.push(`(CONCAT(c.first_name, ' ', c.last_name) LIKE ? OR c.phone LIKE ? OR v.plate LIKE ? OR o.order_id = ?)`);
     params.push(like, like, like, Number(search.replace(/^#/, "")) || 0);
   }

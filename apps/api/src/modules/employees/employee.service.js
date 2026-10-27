@@ -2,7 +2,7 @@ const crypto = require("crypto");
 const bcrypt = require("bcrypt");
 const { pool, withTransaction } = require("../../config/db");
 const { ApiError } = require("../../shared/respond");
-const { pageResult } = require("../../shared/pagination");
+const { pageResult, likePattern } = require("../../shared/pagination");
 const { ROLES } = require("../../middlewares/auth");
 const { signAccessToken } = require("../../shared/tokens");
 
@@ -71,7 +71,7 @@ async function list({ page, search, limit, offset, roleId, activeOnly }) {
   const params = [];
   if (search) {
     where.push("(e.first_name LIKE ? OR e.last_name LIKE ? OR e.email LIKE ? OR CONCAT(e.first_name, ' ', e.last_name) LIKE ?)");
-    const like = `%${search}%`;
+    const like = likePattern(search);
     params.push(like, like, like, like);
   }
   if (roleId) {

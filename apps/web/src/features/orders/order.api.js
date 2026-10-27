@@ -1,7 +1,9 @@
 import { fetchApi } from "../../shared/api/client";
 
 const orderService = {
-  list: ({ page, search, status, paid } = {}) => fetchApi("/api/orders", { query: { page, search, status, paid } }),
+  // The page keeps ?paid=0 for "Unpaid (completed)" in its own address; the API calls that unpaid_only (BE-030).
+  list: ({ page, search, status, paid } = {}) =>
+    fetchApi("/api/orders", { query: { page, search, status, ...(paid === "0" ? { unpaid_only: "true" } : paid === "1" ? { paid: "true" } : {}) } }),
   get: (id) => fetchApi(`/api/orders/${id}`),
   // BE-039: only what is printed on the estimate.
   estimate: (id) => fetchApi(`/api/orders/${id}/estimate`),

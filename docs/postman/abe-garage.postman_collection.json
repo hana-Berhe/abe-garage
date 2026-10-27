@@ -1893,6 +1893,99 @@
           }
         },
         {
+          "name": "List orders for one customer",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('status 200', () => pm.response.to.have.status(200));",
+                  "pm.test('{ status, message, data } shape', () => { const j = pm.response.json(); pm.expect(j).to.have.keys('status', 'message', 'data'); });",
+                  "pm.test('only this customer', () => pm.response.json().data.rows.forEach((o) => pm.expect(o.customer_id).to.eql(Number(pm.collectionVariables.get('customerId')))));"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "Authorization",
+                "value": "Bearer {{token_manager}}"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/orders?customer_id={{customerId}}",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "orders"
+              ],
+              "query": [
+                {
+                  "key": "customer_id",
+                  "value": "{{customerId}}"
+                }
+              ]
+            }
+          }
+        },
+        {
+          "name": "List orders: unpaid_only with paid=true (400)",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('status 400', () => pm.response.to.have.status(400));",
+                  "pm.test('{ status, message, data } shape', () => { const j = pm.response.json(); pm.expect(j).to.have.keys('status', 'message', 'data'); });"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "Authorization",
+                "value": "Bearer {{token_manager}}"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/orders?unpaid_only=true&paid=true",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "orders"
+              ],
+              "query": [
+                {
+                  "key": "unpaid_only",
+                  "value": "true"
+                },
+                {
+                  "key": "paid",
+                  "value": "true"
+                }
+              ]
+            }
+          }
+        },
+        {
           "name": "Order detail",
           "event": [
             {
@@ -2859,6 +2952,55 @@
           }
         },
         {
+          "name": "Record cash payment: paid false (400)",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('status 400', () => pm.response.to.have.status(400));",
+                  "pm.test('{ status, message, data } shape', () => { const j = pm.response.json(); pm.expect(j).to.have.keys('status', 'message', 'data'); });"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "PATCH",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "Authorization",
+                "value": "Bearer {{token_manager}}"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/orders/{{orderId}}/payment",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "orders",
+                "{{orderId}}",
+                "payment"
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"paid\": false\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          }
+        },
+        {
           "name": "Record cash payment",
           "event": [
             {
@@ -2895,6 +3037,15 @@
                 "{{orderId}}",
                 "payment"
               ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"paid\": true\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
             }
           }
         },
