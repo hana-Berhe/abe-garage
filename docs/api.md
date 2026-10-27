@@ -8,7 +8,7 @@ Roles: **T** Technician, **M** Manager, **A** Admin. Lists take `?page=&search=`
 `PATCH` edits change only the fields you send; fields left out keep their saved value. Send at least one editable field,
 plus the `updated_at` you loaded so a stale edit is refused with 409.
 
-Errors: 400 wrong input (with `data.field`), 401 not logged in, expired or signed out, 403 wrong role or account switched off, 404 not found, 409 duplicate, stale edit or already paid, 429 too many login attempts (with `Retry-After`), 500 server error.
+Errors: 400 wrong input (with `data.field`), 401 not logged in, expired or signed out, 403 wrong role or account switched off, 404 not found, 409 duplicate, stale edit or already paid, 429 too many login or reset attempts (with `Retry-After`), 500 server error.
 
 The account is checked on every request. A role change, a switch-off or a new password signs that person out everywhere at once.
 
@@ -17,6 +17,8 @@ The account is checked on every request. A role change, a switch-off or a new pa
 | POST | `/api/install` | Create tables, roles, settings and the first admin (locked after setup) | Setup | BE-047 |
 | GET | `/api/health` | API is running | Public | BE-048 |
 | POST | `/api/auth/login` | Log in. 5 wrong passwords for one email (or 30 tries from one address) in 15 minutes gives 429 | Public | BE-004 |
+| POST | `/api/auth/forgot-password` | `{ email }`. Always the same 200 answer; an active account gets an email with a one-time link to `/reset-password?token=…` that lasts 15 minutes. 3 per email and 10 per address in 15 minutes | Public | BE-005 |
+| POST | `/api/auth/reset-password` | `{ token, new_password }`. Sets the new password, uses up the link and signs out every session. A missing, used or expired link (or a switched-off account) gives 400. 10 tries per address in 15 minutes | Public | BE-006 |
 | PATCH | `/api/auth/password` | Change own password (`old_password`, `new_password`); signs out every session | T, M, A | BE-007 |
 | POST | `/api/employees` | Add staff | A | BE-009 |
 | GET | `/api/employees` | List staff (`?role=&active=`); managers get active technicians only | M, A | BE-010 |
@@ -53,5 +55,5 @@ The account is checked on every request. A role change, a switch-off or a new pa
 | POST | `/api/orders/:order_id/resend-email` | Send the status link or "car is ready" email again | M, A | BE-045 |
 | GET | `/api/dashboard` | Counters, cash totals and the orders that need attention | M, A | BE-046 |
 
-Not built yet: BE-005 and BE-006 (forgot and reset password), BE-008 (`GET /api/profile`), BE-013 (`GET /api/roles`)
+Not built yet: BE-008 (`GET /api/profile`), BE-013 (`GET /api/roles`)
 and BE-039 (`GET /api/orders/:order_id/estimate`).

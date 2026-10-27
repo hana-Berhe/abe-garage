@@ -2,7 +2,7 @@
 
 One web system to run a car repair shop: customers and cars, estimates with 15% VAT, customer approval, technician jobs, invoices and cash payment, and a private status link for customers.
 
-The product spec is **Abe Garage PRD v1.1**. Stack: React 18 + Vite, Express 4, MySQL 8 (9 tables, plain SQL with `mysql2`).
+The product spec is **Abe Garage PRD v1.1**. Stack: React 18 + Vite, Express 4, MySQL 8 (10 tables, plain SQL with `mysql2`).
 
 ## Repository layout
 
