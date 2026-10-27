@@ -58,10 +58,9 @@ async function getWithHistory(id) {
   const vehicle = await getById(id);
   const [orders] = await pool.query(
     `SELECT o.order_id, o.status, o.paid, o.total, o.created_at, o.completed_at,
-       GROUP_CONCAT(COALESCE(s.name, l.description) ORDER BY l.line_id SEPARATOR ', ') AS jobs
+       GROUP_CONCAT(l.service_name ORDER BY l.line_id SEPARATOR ', ') AS jobs
      FROM orders o
      LEFT JOIN order_lines l ON l.order_id = o.order_id
-     LEFT JOIN services s ON s.service_id = l.service_id
      WHERE o.vehicle_id = ?
      GROUP BY o.order_id
      ORDER BY o.created_at DESC, o.order_id DESC`,
@@ -91,8 +90,8 @@ async function listOrders(id, { page, limit, offset }) {
   );
   if (orders.length) {
     const [jobs] = await pool.query(
-      `SELECT l.order_id, COALESCE(s.name, l.description) AS service_name, l.line_price
-       FROM order_lines l LEFT JOIN services s ON s.service_id = l.service_id
+      `SELECT l.order_id, l.service_name, l.line_price
+       FROM order_lines l
        WHERE l.order_id IN (?) ORDER BY l.line_id`,
       [orders.map((o) => o.order_id)]
     );

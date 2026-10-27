@@ -16,6 +16,8 @@ const STAFF = [
   ["sam@abegarage.com", "Sam", "Rivera", 1],
   ["morgan@abegarage.com", "Morgan", "Lee", 1],
   ["kebede@abegarage.com", "Kebede", "Alemu", 1],
+  // Switched off: can't log in and isn't offered for jobs (BE-002).
+  ["abel@abegarage.com", "Abel", "Tadesse", 1, 0],
 ];
 
 const SERVICES = [
@@ -40,10 +42,10 @@ const CUSTOMERS = [
 
 async function upsertStaff(hash) {
   const ids = {};
-  for (const [email, first, last, role] of STAFF) {
+  for (const [email, first, last, role, active = 1] of STAFF) {
     await pool.query(
-      `INSERT IGNORE INTO employees (email, first_name, last_name, phone, password_hash, role_id) VALUES (?, ?, ?, NULL, ?, ?)`,
-      [email, first, last, hash, role]
+      `INSERT IGNORE INTO employees (email, first_name, last_name, phone, password_hash, role_id, active) VALUES (?, ?, ?, NULL, ?, ?, ?)`,
+      [email, first, last, hash, role, active]
     );
     const [[row]] = await pool.query("SELECT employee_id FROM employees WHERE email = ?", [email]);
     ids[first] = row.employee_id;
@@ -135,7 +137,9 @@ async function main() {
   }
 
   console.log(`Seed done. Staff log in with password "${PASSWORD}":`);
-  for (const [email, , , role] of STAFF) console.log(`  ${email} (${["", "Technician", "Manager", "Admin"][role]})`);
+  for (const [email, , , role, active = 1] of STAFF) {
+    console.log(`  ${email} (${["", "Technician", "Manager", "Admin"][role]}${active ? "" : ", switched off: can't log in"})`);
+  }
 }
 
 main()

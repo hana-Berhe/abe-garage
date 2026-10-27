@@ -8,7 +8,7 @@ process.env.DB_NAME = process.env.TEST_DB_NAME || "abe_garage_test";
 if (!/_test$/.test(process.env.DB_NAME)) throw new Error("TEST_DB_NAME must end with _test");
 process.env.DB_HOST = process.env.DB_HOST || "127.0.0.1";
 process.env.JWT_SECRET = process.env.JWT_SECRET || "integration_test_secret_0123456789";
-process.env.JWT_EXPIRES_IN = "1h";
+delete process.env.JWT_EXPIRES_IN_SECONDS;
 process.env.INSTALL_ADMIN_EMAIL = "admin@test.local";
 process.env.INSTALL_ADMIN_PASSWORD = "AdminPass123";
 process.env.INSTALL_ENABLED = "true";
@@ -45,19 +45,22 @@ const ctx = { base: null, server: null, pool: null };
 async function api(method, url, token, body, headers = {}) {
   const res = await fetch(ctx.base + url, {
     method,
-    headers: { "content-type": "application/json", ...(token ? { "x-access-token": token } : {}), ...headers },
+    headers: { "content-type": "application/json", ...(token ? { authorization: `Bearer ${token}` } : {}), ...headers },
     body: body === undefined ? undefined : typeof body === "string" ? body : JSON.stringify(body),
   });
   const json = await res.json().catch(() => null);
   return { code: res.status, headers: res.headers, ...json };
 }
 
+// BE-003: the first field named in a validation error, from { data: { errors: { field: message } } }.
+const errorField = (r) => (r.data && r.data.errors ? Object.keys(r.data.errors)[0] : undefined);
+
 const sql = (query, params) => ctx.pool.query(query, params).then(([rows]) => rows);
 
 async function login(email, password = "Password123") {
   const r = await api("POST", "/api/auth/login", null, { email, password });
   if (r.code !== 200) throw new Error(`login ${email}: ${r.code} ${r.message}`);
-  return r.data.token;
+  return r.data.access_token;
 }
 
 // Fresh database, installed app, and a small fixture set: admin, manager, two technicians, three services.
@@ -136,4 +139,4 @@ async function completeOrder(f, order, { techToken = f.tech, techId = f.techId }
   return last.data;
 }
 
-module.exports = { useApp, api, sql, login, newCustomer, newOrder, completeOrder, mail, ctx };
+module.exports = { errorField, useApp, api, sql, login, newCustomer, newOrder, completeOrder, mail, ctx };

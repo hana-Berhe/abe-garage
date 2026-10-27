@@ -7,6 +7,7 @@ import { PaidBadge, StatusBadge } from "../../../shared/components/StatusBadge";
 import { useAuth } from "../../auth/AuthContext";
 import { OFFICE } from "../../../shared/constants/roles";
 import { date, money } from "../../../shared/lib/format";
+import { pick } from "../../../shared/lib/pick";
 
 const toForm = (v) => Object.fromEntries(Object.entries(v).map(([k, val]) => [k, val ?? ""]));
 
@@ -30,7 +31,7 @@ export default function VehiclePage() {
     setBusy(true);
     setError(null);
     try {
-      const saved = await vehicleService.update(id, form);
+      const saved = await vehicleService.update(id, pick(form, ["year", "make", "model", "type", "mileage", "plate", "vin", "color", "updated_at"]));
       setCar({ ...car, ...saved });
       setForm(toForm(saved));
       setEditing(false);

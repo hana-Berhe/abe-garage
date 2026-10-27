@@ -6,7 +6,7 @@ const { APPROVAL_METHODS } = require("../../shared/order-codes");
 const v = require("../../shared/validate");
 const { mergePatch } = require("../../shared/patch");
 const { ROLES } = require("../../middlewares/auth");
-const { readLine, readLines, readNotes } = require("./order.validator");
+const { readLine, readLines, readNotes, checkReadyDate } = require("./order.validator");
 
 const EDITABLE = ["estimated_ready_date", "notes_for_customer", "internal_notes", "lines"];
 
@@ -23,6 +23,7 @@ async function create(req, res) {
     mileage,
     ...readNotes(req.body),
   };
+  checkReadyDate(data.estimated_ready_date);
   const order = await orderService.create(data, req.employee.id);
   return created(res, "Order created", order);
 }
@@ -48,8 +49,11 @@ async function estimate(req, res) {
 
 async function update(req, res) {
   const id = v.requireId(req.params.id, "id", "Order id");
-  const merged = mergePatch(await orderService.getById(id), req.body, EDITABLE);
+  const current = await orderService.getById(id);
+  const merged = mergePatch(current, req.body, EDITABLE);
   const data = readNotes(merged);
+  // Only a changed date is checked, so an order whose date has passed can still get a new note.
+  if (data.estimated_ready_date !== current.estimated_ready_date) checkReadyDate(data.estimated_ready_date);
   if (req.body.lines !== undefined) data.lines = readLines(req.body, { allowEmpty: true });
   return ok(res, "Order saved", await orderService.update(id, data, readUpdatedAt(req.body), req.employee.id));
 }
@@ -72,7 +76,8 @@ async function approval(req, res) {
 
 async function assignTechnician(req, res) {
   const lineId = v.requireId(req.params.id, "id", "Job id");
-  const technicianId = req.body.technician_id ? v.requireId(req.body.technician_id, "technician_id", "Technician") : null;
+  // BE-035: there is no un-assign; a job always moves to another technician.
+  const technicianId = v.requireId(req.body.technician_id, "technician_id", "Technician");
   return ok(res, "Technician saved", await orderService.assignTechnician(lineId, technicianId, req.employee.id));
 }
 

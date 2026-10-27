@@ -37,20 +37,26 @@ async function buildLines(conn, requested) {
     if (l.service_id) {
       const s = byId.get(l.service_id);
       if (!s) throw new ApiError(400, "One of the services is not offered any more", { field: `lines.${i}.service_id` });
-      return { service_id: s.service_id, description: null, line_price: l.price ?? s.price };
+      return {
+        service_id: s.service_id,
+        description: null,
+        service_name: s.name,
+        service_description: s.description,
+        labor_hours: s.labor_hours,
+        line_price: l.price ?? s.price,
+      };
     }
-    return { service_id: null, description: l.description, line_price: l.price };
+    return { service_id: null, description: l.description, service_name: l.description, service_description: null, labor_hours: null, line_price: l.price };
   });
 }
 
 async function insertLines(conn, orderId, lines) {
   for (const l of lines) {
-    await conn.query("INSERT INTO order_lines (order_id, service_id, description, line_price) VALUES (?, ?, ?, ?)", [
-      orderId,
-      l.service_id,
-      l.description,
-      l.line_price,
-    ]);
+    await conn.query(
+      `INSERT INTO order_lines (order_id, service_id, description, service_name, service_description, labor_hours, line_price)
+       VALUES (?, ?, ?, ?, ?, ?, ?)`,
+      [orderId, l.service_id, l.description, l.service_name, l.service_description, l.labor_hours, l.line_price]
+    );
   }
 }
 
@@ -161,11 +167,10 @@ async function list({ page, search, limit, offset, status, paid }) {
 
 async function getLines(conn, orderId) {
   const [rows] = await conn.query(
-    `SELECT l.line_id, l.service_id, COALESCE(s.name, l.description) AS name, l.description, l.line_price,
-       s.labor_hours, l.technician_id, CONCAT(e.first_name, ' ', e.last_name) AS technician_name,
+    `SELECT l.line_id, l.service_id, l.service_name AS name, l.description, l.service_description, l.line_price,
+       l.labor_hours, l.technician_id, CONCAT(e.first_name, ' ', e.last_name) AS technician_name,
        l.line_status, l.started_at, l.done_at, l.technician_note, l.created_at
      FROM order_lines l
-     LEFT JOIN services s ON s.service_id = l.service_id
      LEFT JOIN employees e ON e.employee_id = l.technician_id
      WHERE l.order_id = ? ORDER BY l.line_id`,
     [orderId]
@@ -227,8 +232,8 @@ async function getEstimate(id) {
   if (!rows[0]) throw new ApiError(404, "Order not found");
   const o = rows[0];
   const [lines] = await pool.query(
-    `SELECT l.line_id, COALESCE(s.name, l.description) AS service_name, s.description, l.line_price
-     FROM order_lines l LEFT JOIN services s ON s.service_id = l.service_id
+    `SELECT l.line_id, l.service_name, l.service_description AS description, l.line_price
+     FROM order_lines l
      WHERE l.order_id = ? ORDER BY l.line_id`,
     [id]
   );
@@ -319,12 +324,18 @@ async function update(id, data, updatedAt, employeeId) {
         } else if (match.service_id !== line.service_id) {
           // A different job on the same line: the old technician was chosen for the old job.
           await conn.query(
-            "UPDATE order_lines SET service_id = ?, description = ?, line_price = ?, technician_id = NULL WHERE line_id = ?",
-            [line.service_id, line.description, line.line_price, match.line_id]
+            `UPDATE order_lines SET service_id = ?, description = ?, service_name = ?, service_description = ?, labor_hours = ?,
+               line_price = ?, technician_id = NULL
+             WHERE line_id = ?`,
+            [line.service_id, line.description, line.service_name, line.service_description, line.labor_hours, line.line_price, match.line_id]
           );
+        } else if (line.service_id) {
+          // Same service: only the price changes; the job keeps the name it was added with.
+          await conn.query("UPDATE order_lines SET line_price = ? WHERE line_id = ?", [line.line_price, match.line_id]);
         } else {
-          await conn.query("UPDATE order_lines SET description = ?, line_price = ? WHERE line_id = ?", [
+          await conn.query("UPDATE order_lines SET description = ?, service_name = ?, line_price = ? WHERE line_id = ?", [
             line.description,
+            line.service_name,
             line.line_price,
             match.line_id,
           ]);
@@ -412,25 +423,31 @@ async function lockLine(conn, lineId) {
   return { order, line: lines[0] };
 }
 
-// FR-TEC-01: one active technician per job.
+// FR-TEC-01, BE-035: one active technician per job. A started job may move to another technician (someone is
+// ill or leaves) and keeps its progress. The same technician again changes nothing. Jobs can't be un-assigned.
 async function assignTechnician(lineId, technicianId, employeeId) {
   const orderId = await withTransaction(async (conn) => {
     const { order, line } = await lockLine(conn, lineId);
     if (order.status === S.DECLINED || order.status === S.COMPLETED) {
       throw new ApiError(400, "Technicians can't be changed on a completed or declined order");
     }
-    if (line.line_status !== L.NOT_STARTED) throw new ApiError(400, "This job has already started");
-    let name = "nobody";
-    if (technicianId) {
-      const [techs] = await conn.query(
-        "SELECT first_name, last_name FROM employees WHERE employee_id = ? AND role_id = ? AND active = 1",
-        [technicianId, ROLES.TECHNICIAN]
-      );
-      if (!techs[0]) throw new ApiError(400, "Choose an active technician", { field: "technician_id" });
-      name = `${techs[0].first_name} ${techs[0].last_name}`;
-    }
+    if (line.line_status === L.DONE) throw new ApiError(400, "This job is already done");
+    if (line.technician_id === technicianId) return order.order_id;
+    // Locking the technician's row means a switch-off at the same moment waits, and is then seen here.
+    const [techs] = await conn.query(
+      "SELECT first_name, last_name FROM employees WHERE employee_id = ? AND role_id = ? AND active = 1 FOR UPDATE",
+      [technicianId, ROLES.TECHNICIAN]
+    );
+    if (!techs[0]) throw new ApiError(400, "Choose an active technician", { field: "technician_id" });
+    const name = `${techs[0].first_name} ${techs[0].last_name}`;
     await conn.query("UPDATE order_lines SET technician_id = ? WHERE line_id = ?", [technicianId, lineId]);
-    await history.add(conn, order.order_id, employeeId, "technician_assigned", `Job #${lineId} → ${name}`);
+    if (line.technician_id) {
+      const [[old]] = await conn.query("SELECT first_name, last_name FROM employees WHERE employee_id = ?", [line.technician_id]);
+      const detail = `Job #${lineId}: ${old.first_name} ${old.last_name} → ${name}`;
+      await history.add(conn, order.order_id, employeeId, "technician_changed", detail);
+    } else {
+      await history.add(conn, order.order_id, employeeId, "technician_assigned", `Job #${lineId} → ${name}`);
+    }
     return order.order_id;
   });
   return getById(orderId);
@@ -526,13 +543,12 @@ async function updateLineStatus(lineId, { status, note }, actor) {
 // Jobs on an order waiting for re-approval show only if they had started (FR-TEC-07 badge).
 async function myJobs(technicianId) {
   const [rows] = await pool.query(
-    `SELECT l.line_id, l.order_id, COALESCE(s.name, l.description) AS name, s.labor_hours, l.line_status,
+    `SELECT l.line_id, l.order_id, l.service_name AS name, l.labor_hours, l.line_status,
        l.started_at, l.done_at, l.technician_note, o.status AS order_status, o.estimated_ready_date,
        o.notes_for_customer, v.year, v.make, v.model, v.plate, v.color
      FROM order_lines l
      JOIN orders o ON o.order_id = l.order_id
      JOIN vehicles v ON v.vehicle_id = o.vehicle_id
-     LEFT JOIN services s ON s.service_id = l.service_id
      WHERE l.technician_id = ?
        AND (o.status IN (2, 3) OR (o.status = 1 AND l.line_status >= 1) OR (o.status = 4 AND l.done_at >= UTC_TIMESTAMP() - INTERVAL 1 DAY))
        AND (l.line_status < 2 OR l.done_at >= UTC_TIMESTAMP() - INTERVAL 1 DAY)

@@ -2,6 +2,7 @@ import { useEffect, useState } from "react";
 import settingsService from "../settings.api";
 import Field from "../../../shared/components/Field";
 import Alert from "../../../shared/components/Alert";
+import { pick } from "../../../shared/lib/pick";
 
 const toForm = (s) => ({ ...s, address: s.address || "", phone: s.phone || "", email: s.email || "", closing_time: s.closing_time || "" });
 
@@ -25,7 +26,7 @@ export default function Settings() {
     setBusy(true);
     setError(null);
     try {
-      const s = await settingsService.update(form);
+      const s = await settingsService.update(pick(form, ["name", "address", "phone", "email", "vat_rate", "opening_time", "closing_time", "updated_at"]));
       setForm(toForm(s));
       setSaved(true);
     } catch (err) {

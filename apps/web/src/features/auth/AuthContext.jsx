@@ -57,7 +57,8 @@ export function AuthProvider({ children }) {
   }, [employeeId]);
 
   const login = useCallback(async (email, password) => {
-    const { token } = await employeeService.login(email, password);
+    // BE-004: login answers { access_token, token_type: "Bearer", expires_in, employee }.
+    const { access_token: token } = await employeeService.login(email, password);
     tokenStore.set(token);
     const who = readToken(token);
     setEmployee(who);

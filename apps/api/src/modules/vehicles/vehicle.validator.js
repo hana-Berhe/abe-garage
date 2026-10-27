@@ -9,6 +9,9 @@ function optionalInt(body, field, label, min, max, prefix) {
 }
 
 // prefix lets the customer form report "vehicle.plate" when the car is sent with a new customer.
+// The car fields an add or edit may send (BE-003).
+const CAR = ["year", "make", "model", "type", "mileage", "plate", "vin", "color"];
+
 function readVehicle(body, prefix = "") {
   const field = (name, label, max, required) => {
     try {
@@ -33,4 +36,4 @@ function readVehicle(body, prefix = "") {
   };
 }
 
-module.exports = { optionalInt, readVehicle };
+module.exports = { CAR, optionalInt, readVehicle };

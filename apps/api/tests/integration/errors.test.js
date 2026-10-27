@@ -6,7 +6,7 @@ const { useApp, api, ctx } = require("./helpers");
 const f = useApp();
 
 const shape = (r) => {
-  assert.ok(["fail", "error"].includes(r.status), `status ${r.status}`);
+  assert.equal(r.status, "error");
   assert.equal(typeof r.message, "string");
   assert.ok("data" in r);
 };

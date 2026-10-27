@@ -26,6 +26,8 @@ const ACTIONS = {
   approved: "Approved",
   declined: "Declined",
   technician_assigned: "Technician assigned",
+  technician_changed: "Technician changed",
+  note_saved: "Work note saved",
   job_started: "Job started",
   job_done: "Job done",
   completed: "All jobs done",
@@ -208,10 +210,11 @@ export default function OrderDetail() {
                         {l.technician_note && <div className="small mt-1"><strong>Note:</strong> {l.technician_note}</div>}
                       </td>
                       <td style={{ minWidth: 170 }}>
-                        {office && !closed && l.line_status === 0 ? (
+                        {/* BE-035: a started job can move to another technician too; there is no un-assign. */}
+                        {office && !closed && l.line_status !== 2 ? (
                           <select className="form-select" aria-label={`Technician for ${l.name}`} value={l.technician_id || ""} disabled={busy}
-                            onChange={(e) => act(() => orderService.assignTechnician(l.line_id, e.target.value ? Number(e.target.value) : null))}>
-                            <option value="">Not assigned</option>
+                            onChange={(e) => e.target.value && act(() => orderService.assignTechnician(l.line_id, Number(e.target.value)))}>
+                            <option value="" disabled>Not assigned</option>
                             {l.technician_id && !technicians.some((t) => t.employee_id === l.technician_id) && <option value={l.technician_id}>{l.technician_name}</option>}
                             {technicians.map((t) => <option key={t.employee_id} value={t.employee_id}>{t.first_name} {t.last_name}</option>)}
                           </select>

@@ -6,7 +6,8 @@ const v = require("../../shared/validate");
 const { mergePatch } = require("../../shared/patch");
 const { readEmployee } = require("./employee.validator");
 
-const EDITABLE = ["email", "first_name", "last_name", "phone", "role_id", "active", "password"];
+// BE-012: no password here. The route refuses one and points to Forgot password.
+const EDITABLE = ["email", "first_name", "last_name", "phone", "role_id", "active"];
 
 async function login(req, res) {
   const email = v.requireEmail(req.body);
