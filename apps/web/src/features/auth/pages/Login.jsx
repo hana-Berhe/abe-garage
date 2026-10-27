@@ -42,7 +42,7 @@ export default function Login() {
         <div style={{ position: "relative", zIndex: 2 }}>
           <div className="eyebrow">Staff only</div>
           <h1>Garage desk<br /><em>and workshop.</em></h1>
-          <p>Orders, job cards, invoices and call-back requests, in one place. For Admin, Manager and Technician accounts.</p>
+          <p>Orders, job cards and invoices, in one place. For Admin, Manager and Technician accounts.</p>
         </div>
         <div className="facts">
           <span><Icon name="cash" size={18} />Cash only</span>

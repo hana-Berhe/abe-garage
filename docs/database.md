@@ -15,7 +15,6 @@ MySQL 8, InnoDB, utf8mb4. The whole schema is in [`apps/api/db/schema.sql`](../a
 | `order_lines` | the jobs in an order, with a copied price, one technician and a status (0 Not started, 1 Started, 2 Done) |
 | `order_history` | who did what and when (created, approved, job_started, paid, email_sent, …) |
 | `garage_settings` | the single row of garage details and the VAT rate (15%) |
-| `callback_requests` | "Request a call back" forms from the website: name, phone, car, service (empty means "Not sure"), problem, best time to call, and status 0 New or 1 Called (with who called and when) |
 
 ## Rules the database enforces
 
@@ -25,7 +24,6 @@ MySQL 8, InnoDB, utf8mb4. The whole schema is in [`apps/api/db/schema.sql`](../a
 - `paid` can only be 1 when `status` is 4 (Completed).
 - An invoice number can only be set when `status` is 4 (Completed).
 - Only one `garage_settings` row.
-- A call-back `status` is 0 or 1, and `best_time` is `any`, `morning` or `afternoon`.
 - No cascading deletes.
 - `updated_at` keeps milliseconds so stale edits are always caught.
 
@@ -44,11 +42,13 @@ npm run seed                                  # optional demo data
 An existing database needs each newer change once, in order (skip any it already has):
 
 ```bash
-mysql -u abe -p abe_garage < apps/api/db/migrations/001_callback_requests.sql
 mysql -u abe -p abe_garage < apps/api/db/migrations/002_employee_token_version.sql
 mysql -u abe -p abe_garage < apps/api/db/migrations/003_permanent_invoices.sql
+mysql -u abe -p abe_garage < apps/api/db/migrations/004_drop_callback_requests.sql
 ```
 
 After `003`, orders that were already paid have no saved invoice. A manager can issue it from the order's invoice page.
+
+`004` removes the old `callback_requests` table from the website call-back form, which no longer exists. It deletes any saved requests, so back them up first if you want to keep them (the file shows how). A database that never had the table can skip it.
 
 `POST /api/install` locks itself once any staff account exists (it then answers 403).

@@ -51,10 +51,7 @@ The account is checked on every request. A role change, a switch-off or a new pa
 | PATCH | `/api/orders/:order_id/payment` | Mark paid in cash (once, after the invoice is issued) | M, A | BE-042 |
 | GET | `/api/public/orders/:order_hash` | Customer status page data (safe fields only, no prices) | Public | BE-044 |
 | POST | `/api/orders/:order_id/resend-email` | Send the status link or "car is ready" email again | M, A | BE-045 |
-| GET | `/api/dashboard` | Counters, cash totals and the 5 newest call-back requests | M, A | BE-046 |
-| POST | `/api/public/callbacks` | Website "Request a call back" form. At most 5 a phone number per hour | Public | extra |
-| GET | `/api/callbacks?status=new\|called\|all` | Call-back requests, newest first, with `new_count` | M, A | extra |
-| PATCH | `/api/callbacks/:callback_id/called` | Mark a request as called (409 if someone already did) | M, A | extra |
+| GET | `/api/dashboard` | Counters, cash totals and the orders that need attention | M, A | BE-046 |
 
 Not built yet: BE-005 and BE-006 (forgot and reset password), BE-008 (`GET /api/profile`), BE-013 (`GET /api/roles`)
 and BE-039 (`GET /api/orders/:order_id/estimate`).
