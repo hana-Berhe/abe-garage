@@ -1,5 +1,6 @@
 const { pool } = require("../../config/db");
 const { periodStarts } = require("../../shared/time");
+const callbackService = require("../callbacks/callback.service");
 
 // FR-DSH-02, FR-DSH-03, FR-INV-04. Numbers match the order list filters.
 async function getCounters() {
@@ -27,7 +28,15 @@ async function getCounters() {
      WHERE o.status IN (1, 2, 3) OR (o.status = 4 AND o.paid = 0)
      ORDER BY o.status = 1 DESC, o.created_at DESC LIMIT 8`
   );
-  return { ...counters, needs_attention: recent, timezone: process.env.APP_TIMEZONE || "UTC" };
+  // The 5 newest call-back requests, new ones first (managers and admins see this dashboard).
+  const callbacks = await callbackService.list({ status: "all", page: 1, limit: 5, offset: 0 });
+  return {
+    ...counters,
+    needs_attention: recent,
+    callbacks: callbacks.rows,
+    new_callbacks: callbacks.new_count,
+    timezone: process.env.APP_TIMEZONE || "UTC",
+  };
 }
 
 module.exports = { getCounters };

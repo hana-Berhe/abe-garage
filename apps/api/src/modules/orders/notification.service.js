@@ -13,7 +13,7 @@ const MESSAGES = {
   }),
   completed: (o, link) => ({
     subject: `Your ${o.make} ${o.model} is ready`,
-    text: `Hello ${o.first_name},\n\nGood news: your ${o.make} ${o.model} (${o.plate}) is ready for pickup.\nTotal: ${o.total} (VAT included). Details: ${link}\n\n${o.garage_name}${o.garage_phone ? `, ${o.garage_phone}` : ""}`,
+    text: `Hello ${o.first_name},\n\nGood news: your ${o.make} ${o.model} (${o.plate}) is ready for pickup.\nDetails: ${link}\n\n${o.garage_name}${o.garage_phone ? `, ${o.garage_phone}` : ""}`,
   }),
 };
 
@@ -21,7 +21,7 @@ const MESSAGES = {
 async function sendOrderEmail(orderId, kind, employeeId = null) {
   try {
     const [rows] = await pool.query(
-      `SELECT o.order_id, o.order_hash, o.total, c.first_name, c.email, v.make, v.model, v.plate,
+      `SELECT o.order_id, o.order_hash, c.first_name, c.email, v.make, v.model, v.plate,
          g.name AS garage_name, g.phone AS garage_phone
        FROM orders o
        JOIN customers c ON c.customer_id = o.customer_id

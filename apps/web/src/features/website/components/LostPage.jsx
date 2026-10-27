@@ -1,27 +1,34 @@
 import { Link } from "react-router-dom";
-import { Brand } from "../../../layouts/Header";
-import { useGarage } from "../useGarage";
-import { telHref } from "../../../shared/lib/format";
-import heroArt from "../../../assets/hero-y.svg";
+import Header from "../../../layouts/Header";
+import Footer from "../../../layouts/Footer";
+import Icon from "../../../shared/components/Icon";
+import gearArt from "../../../assets/gear.svg";
 
-// Full black page used for "page not found" and "no access".
-export default function LostPage({ code, title, text, action = { to: "/", label: "Back to the home page" } }) {
-  const g = useGarage();
+// Dark page used for "page not found" and "no access".
+export default function LostPage({ code, eyebrow, title, text, action = { to: "/", label: "Back to home" } }) {
   return (
-    <div className="lost">
-      <div className="site-wrap py-4"><Brand small tagline={false} /></div>
-      <div className="site-wrap lost__body pb-5">
-        <div>
-          {code && <div className="lost__code">{code}</div>}
-          <h1 className="d">{title}</h1>
-          <p>{text}</p>
-          <div className="d-flex flex-wrap gap-2 mt-4">
-            <Link to={action.to} className="site-btn site-btn--yellow">{action.label}</Link>
-            {g.phone && <a href={telHref(g.phone)} className="site-btn site-btn--ghost">Call {g.phone}</a>}
+    <div className="ag">
+      <Header />
+      <main>
+        <section className="hero">
+          <div className="wrap lost">
+            <div>
+              <div className="eyebrow">{eyebrow}</div>
+              <h1>{title}</h1>
+              <p>{text}</p>
+              <div className="actions">
+                <Link className="btn primary" to={action.to}>{action.label} <Icon name="arrow" size={16} stroke={2.5} /></Link>
+                <Link className="btn outline" to="/contact">Contact us</Link>
+              </div>
+            </div>
+            <div className="lost-art" aria-hidden="true">
+              <b>{code || "!"}</b>
+              <img src={gearArt} alt="" />
+            </div>
           </div>
-        </div>
-        <div><img src={heroArt} alt="" className="w-100" /></div>
-      </div>
+        </section>
+      </main>
+      <Footer />
     </div>
   );
 }

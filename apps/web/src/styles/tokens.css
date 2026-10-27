@@ -1,51 +1,42 @@
-/* Abe Garage design tokens v2 (yellow and black workshop look) */
-@import url("https://fonts.googleapis.com/css2?family=Archivo:wght@400;500;600;700;800&family=Big+Shoulders+Display:wght@800;900&family=JetBrains+Mono:wght@500;700&display=swap");
+/* Abe Garage design tokens, version 3: charcoal and orange (from Hana's index 2.html).
+   Values match design-hifi/tokens.css. The short names lower down are the names the app's CSS uses. */
+@import url("https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&family=JetBrains+Mono:wght@500;700&display=swap");
 :root{
-  /* brand */
-  --ag-yellow:#FFC400; --ag-yellow-hover:#FFD447; --ag-yellow-dark:#E0AC00;
-  --ag-ink:#141414; --ag-asphalt:#1C1C1C; --ag-steel:#2A2A2A; --ag-steel-line:#333333; --ag-ink-deep:#0C0C0C;
-  --ag-on-dark:#D9D4C7; --ag-muted-dark:#B5AFA2;
-  /* light surfaces */
-  --ag-bg:#F5F2EA; --ag-paper-2:#ECE7DB; --ag-surface:#FFFFFF; --ag-surface-alt:#FAF8F3;
-  --ag-line:#DDD6C6; --ag-border-strong:#C9C1AE; --ag-muted:#5E584C;
-  --ag-error:#A3180F; --ag-focus:#A9C2FF;
-  /* order status: orders.status 1..5 (bg / text) */
-  --ag-s1-bg:#FFF1D6; --ag-s1-fg:#7A4D00;  /* Awaiting approval */
-  --ag-s2-bg:#E3ECFF; --ag-s2-fg:#1D44B8;  /* Approved */
-  --ag-s3-bg:#ECE7FB; --ag-s3-fg:#5432A8;  /* In progress */
-  --ag-s4-bg:#DCF2E8; --ag-s4-fg:#0B6446;  /* Completed, also Paid */
-  --ag-s5-bg:#ECEEF2; --ag-s5-fg:#4A5466;  /* Declined, also Inactive */
-  --ag-unpaid-bg:#FDE6E4; --ag-unpaid-fg:#A3180F;
-  /* type */
-  --ag-font-display:"Big Shoulders Display",Archivo,system-ui,sans-serif; /* 900, uppercase, line-height .9 */
-  --ag-font-body:Archivo,system-ui,sans-serif;
-  --ag-font-mono:"JetBrains Mono",ui-monospace,monospace; /* plates, order numbers, small labels */
-  --ag-text-body:16px; --ag-text-sm:14px; --ag-text-xs:12.5px;
-  /* space, radius, shadow */
-  --ag-space-1:4px; --ag-space-2:8px; --ag-space-3:12px; --ag-space-4:16px; --ag-space-5:24px; --ag-space-6:32px; --ag-space-7:48px;
-  --ag-radius-control:6px; --ag-radius-card:10px; --ag-radius-pill:999px;
-  --ag-shadow-hard:8px 8px 0 var(--ag-ink);   /* public service tiles */
-  --ag-shadow-pop:0 8px 24px rgba(20,20,20,.14);
+  --ag-orange:#FF7A24; --ag-orange-hover:#FF8C42; --ag-orange-text:#A34C08; --ag-orange-tint:#FFF0E5;
+  --ag-black:#101318; --ag-header:#14181E; --ag-coal:#1B2027; --ag-panel:#20262D; --ag-steel:#343D45; --ag-ink:#11151A;
+  --ag-muted:#5B636F; --ag-muted-dark:#A3ACB7; --ag-on-dark:#CFD4DA;
+  --ag-line:#E3E6EA; --ag-line-strong:#CBD0D6; --ag-bg:#F5F5F3; --ag-surface:#FFFFFF; --ag-error:#A3180F;
+  --ag-status-1-bg:#FFF1D6; --ag-status-1-text:#7A4D00; /* Awaiting approval */
+  --ag-status-2-bg:#E3ECFF; --ag-status-2-text:#1D44B8; /* Approved */
+  --ag-status-3-bg:#ECE7FB; --ag-status-3-text:#5432A8; /* In progress */
+  --ag-status-4-bg:#DCF2E8; --ag-status-4-text:#0B6446; /* Completed, also Paid */
+  --ag-status-5-bg:#ECEEF2; --ag-status-5-text:#4A5466; /* Declined, also Inactive */
+  --ag-unpaid-bg:#FDE6E4; --ag-unpaid-text:#A3180F;
+  --ag-font:Inter, ui-sans-serif, system-ui, -apple-system, "Segoe UI", sans-serif;
+  --ag-font-mono:"JetBrains Mono", ui-monospace, Menlo, monospace;
+  --ag-radius-control:6px; --ag-radius-card:9px; --ag-radius-tile:12px; --ag-radius-pill:999px;
+  --ag-shadow-card:0 7px 28px rgba(16,19,24,.04); --ag-shadow-pop:0 20px 50px rgba(16,19,24,.10);
+  --ag-space-1:4px; --ag-space-2:8px; --ag-space-3:12px; --ag-space-4:16px; --ag-space-5:24px; --ag-space-6:32px; --ag-space-7:48px; --ag-space-8:96px;
+  --ag-container:1180px;
+
+  /* Names used by app.css and website.css */
+  --ag-font-body:var(--ag-font); --ag-font-display:var(--ag-font);
+  --ag-s1-bg:var(--ag-status-1-bg); --ag-s1-fg:var(--ag-status-1-text);
+  --ag-s2-bg:var(--ag-status-2-bg); --ag-s2-fg:var(--ag-status-2-text);
+  --ag-s3-bg:var(--ag-status-3-bg); --ag-s3-fg:var(--ag-status-3-text);
+  --ag-s4-bg:var(--ag-status-4-bg); --ag-s4-fg:var(--ag-status-4-text);
+  --ag-s5-bg:var(--ag-status-5-bg); --ag-s5-fg:var(--ag-status-5-text);
+  --ag-unpaid-fg:var(--ag-unpaid-text);
+  --ag-border-strong:var(--ag-line-strong); --ag-surface-alt:#F8F9FA; --ag-focus:#FFC9A3;
+  --ag-text-body:15px; --ag-text-sm:14px; --ag-text-xs:12.5px;
   --ag-control-h:44px; --ag-sidebar-w:248px;
 }
-body{margin:0;background:var(--ag-bg);color:var(--ag-ink);font:var(--ag-text-body)/1.55 var(--ag-font-body)}
-.ag-display{font-family:var(--ag-font-display);font-weight:900;text-transform:uppercase;line-height:.9}
+body{margin:0;background:var(--ag-bg);color:var(--ag-ink);font:var(--ag-text-body)/1.5 var(--ag-font)}
 .ag-mono{font-family:var(--ag-font-mono)}
-.ag-hazard{height:14px;background:repeating-linear-gradient(-45deg,var(--ag-yellow) 0 16px,var(--ag-ink) 16px 32px)}
-.ag-tag{display:inline-flex;font:700 13px/1 var(--ag-font-mono);letter-spacing:.08em;text-transform:uppercase;background:var(--ag-yellow);color:var(--ag-ink);padding:7px 10px;border-radius:4px}
-.ag-btn{display:inline-flex;align-items:center;justify-content:center;gap:8px;min-height:var(--ag-control-h);padding:0 20px;border-radius:var(--ag-radius-control);font:800 15px/1 var(--ag-font-body);border:2px solid transparent;cursor:pointer;text-decoration:none}
-.ag-btn--primary{background:var(--ag-yellow);color:var(--ag-ink)}.ag-btn--primary:hover{background:var(--ag-yellow-hover)}
-.ag-btn--dark{background:var(--ag-ink);color:#fff}
-.ag-btn--secondary{background:#fff;color:var(--ag-ink);border-color:var(--ag-border-strong)}
-.ag-tile{background:#fff;border:3px solid var(--ag-ink);border-radius:var(--ag-radius-card);box-shadow:var(--ag-shadow-hard)}
-.ag-plate{font:700 14px/1 var(--ag-font-mono);border:2px solid var(--ag-ink);border-radius:6px;padding:6px 8px;background:#fff}
-.ag-badge{display:inline-flex;align-items:center;gap:6px;padding:3px 10px;border-radius:var(--ag-radius-pill);font:600 var(--ag-text-xs)/1.5 var(--ag-font-body);white-space:nowrap}
+.ag-badge{display:inline-flex;align-items:center;gap:6px;padding:3px 10px;border-radius:var(--ag-radius-pill);font:600 var(--ag-text-xs)/1.5 var(--ag-font);white-space:nowrap}
 .ag-badge::before{content:"";width:7px;height:7px;border-radius:50%;background:currentColor}
 .ag-badge--1{background:var(--ag-s1-bg);color:var(--ag-s1-fg)}.ag-badge--2{background:var(--ag-s2-bg);color:var(--ag-s2-fg)}
 .ag-badge--3{background:var(--ag-s3-bg);color:var(--ag-s3-fg)}.ag-badge--4,.ag-badge--paid{background:var(--ag-s4-bg);color:var(--ag-s4-fg)}
 .ag-badge--5{background:var(--ag-s5-bg);color:var(--ag-s5-fg)}.ag-badge--unpaid{background:var(--ag-unpaid-bg);color:var(--ag-unpaid-fg)}
-.ag-card{background:var(--ag-surface);border:1px solid var(--ag-line);border-radius:var(--ag-radius-card)}
-.ag-input{width:100%;min-height:var(--ag-control-h);border:1px solid var(--ag-border-strong);border-radius:var(--ag-radius-control);padding:0 12px;font:inherit;background:#fff}
-.ag-input:focus{outline:3px solid var(--ag-focus);border-color:var(--ag-ink)}
-.ag-input[aria-invalid="true"]{border-color:var(--ag-error)}
-.ag-field-error{margin:6px 0 0;color:var(--ag-error);font-size:var(--ag-text-sm);font-weight:500}
+.ag-badge--new{background:var(--ag-orange-tint);color:var(--ag-orange-text)}
+.ag-card{background:var(--ag-surface);border:1px solid var(--ag-line);border-radius:12px}
