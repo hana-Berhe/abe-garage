@@ -20,6 +20,8 @@ CREATE TABLE IF NOT EXISTS employees (
   password_hash CHAR(60)     NOT NULL,
   role_id       TINYINT UNSIGNED NOT NULL,
   active        TINYINT(1)   NOT NULL DEFAULT 1,
+  -- Raised on a role change, switch-off or new password; older login tokens then stop working.
+  token_version INT UNSIGNED NOT NULL DEFAULT 0,
   created_at    DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
   updated_at    DATETIME(3) NOT NULL DEFAULT CURRENT_TIMESTAMP(3) ON UPDATE CURRENT_TIMESTAMP(3),
   PRIMARY KEY (employee_id),

@@ -19,7 +19,7 @@ async function changePassword(req, res) {
   const oldPassword = v.requireText(req.body, "old_password", "Current password", 72);
   const newPassword = v.requirePassword(req.body, "new_password");
   await employeeService.changePassword(req.employee.id, oldPassword, newPassword);
-  return ok(res, "Password changed");
+  return ok(res, "Password changed. Please log in again.");
 }
 
 async function create(req, res) {

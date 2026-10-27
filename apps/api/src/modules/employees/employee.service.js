@@ -13,6 +13,7 @@ function makeToken(employee) {
     {
       employee_id: employee.employee_id,
       role_id: employee.role_id,
+      token_version: employee.token_version,
       name: `${employee.first_name} ${employee.last_name}`,
     },
     process.env.JWT_SECRET,
@@ -23,7 +24,7 @@ function makeToken(employee) {
 // FR-AUTH-01..03. Wrong email and wrong password give the same message.
 async function login(email, password) {
   const [rows] = await pool.query(
-    `SELECT ${PUBLIC_COLUMNS}, e.password_hash FROM employees e JOIN roles r ON r.role_id = e.role_id WHERE e.email = ?`,
+    `SELECT ${PUBLIC_COLUMNS}, e.password_hash, e.token_version FROM employees e JOIN roles r ON r.role_id = e.role_id WHERE e.email = ?`,
     [email]
   );
   const employee = rows[0];
@@ -31,11 +32,13 @@ async function login(email, password) {
   if (!passwordOk) throw new ApiError(401, "Email or password is wrong");
   if (!employee.active) throw new ApiError(403, "Account disabled");
 
+  const token = makeToken(employee);
   delete employee.password_hash;
-  return { token: makeToken(employee), employee };
+  delete employee.token_version;
+  return { token, employee };
 }
 
-// FR-AUTH-07
+// FR-AUTH-07, BE-007. Bumping token_version signs the person out everywhere, this device included.
 async function changePassword(employeeId, oldPassword, newPassword) {
   const [rows] = await pool.query("SELECT password_hash FROM employees WHERE employee_id = ?", [employeeId]);
   if (!rows[0]) throw new ApiError(404, "Employee not found");
@@ -43,7 +46,10 @@ async function changePassword(employeeId, oldPassword, newPassword) {
     throw new ApiError(400, "Current password is wrong", { field: "old_password" });
   }
   const hash = await bcrypt.hash(newPassword, 10);
-  await pool.query("UPDATE employees SET password_hash = ? WHERE employee_id = ?", [hash, employeeId]);
+  await pool.query("UPDATE employees SET password_hash = ?, token_version = token_version + 1 WHERE employee_id = ?", [
+    hash,
+    employeeId,
+  ]);
 }
 
 async function emailTaken(email, exceptId = 0) {
@@ -115,6 +121,10 @@ async function update(id, data, actingEmployeeId) {
   if (data.password) {
     sets.push("password_hash = ?");
     params.push(await bcrypt.hash(data.password, 10));
+  }
+  // BE-012: a new role, a switch-off or a new password signs the person out at once.
+  if (data.password || data.role_id !== current.role_id || data.active !== current.active) {
+    sets.push("token_version = token_version + 1");
   }
   const [result] = await pool.query(
     `UPDATE employees SET ${sets.join(", ")} WHERE employee_id = ? AND updated_at = ?`,
