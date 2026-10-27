@@ -12,6 +12,9 @@ import { money } from "../../../shared/lib/format";
 
 const STEPS = ["Customer", "Car", "Services", "Notes and date"];
 const VAT_PREVIEW = 15; // preview only; the server uses the rate in settings
+// The step whose page shows each field, so a refused save opens that step with the message under the input.
+const FIELD_STEP = { vehicle_id: 1, mileage: 1, estimated_ready_date: 3, notes_for_customer: 3, internal_notes: 3 };
+const stepOf = (field) => (field?.startsWith("lines") ? 2 : FIELD_STEP[field]);
 
 // FR-ORD-01..04: a new order in 4 steps, with a live subtotal, VAT and total.
 export default function NewOrder() {
@@ -30,13 +33,22 @@ export default function NewOrder() {
   const [error, setError] = useState(null);
   const [busy, setBusy] = useState(false);
 
+  // A customer with one car gets that car picked, with its saved mileage filled in.
+  const pickCustomer = useCallback((full) => {
+    const only = full.vehicles.length === 1 ? full.vehicles[0] : null;
+    setCustomer(full);
+    setVehicleId(only ? only.vehicle_id : null);
+    setMileage(only?.mileage ?? "");
+    setStep(1);
+  }, []);
+
   useEffect(() => {
     serviceService.list().then((all) => setServices(all.filter((s) => s.active))).catch((e) => setError(e));
     const preset = params.get("customer");
     if (preset) {
-      customerService.get(preset).then((c) => { setCustomer(c); setStep(1); }).catch(setError);
+      customerService.get(preset).then(pickCustomer).catch(setError);
     }
-  }, [params]);
+  }, [params, pickCustomer]);
 
   useEffect(() => {
     if (step !== 0) return;
@@ -45,12 +57,7 @@ export default function NewOrder() {
 
   const onSearch = useCallback((s) => setSearch(s), []);
 
-  const chooseCustomer = async (c) => {
-    const full = await customerService.get(c.customer_id);
-    setCustomer(full);
-    setVehicleId(full.vehicles.length === 1 ? full.vehicles[0].vehicle_id : null);
-    setStep(1);
-  };
+  const chooseCustomer = async (c) => pickCustomer(await customerService.get(c.customer_id));
 
   const prices = useMemo(() => {
     const list = services.filter((s) => s.service_id in picked).map((s) => (picked[s.service_id] !== "" ? picked[s.service_id] : s.price));
@@ -77,8 +84,7 @@ export default function NewOrder() {
       navigate(`/admin/order/${order.order_id}`, { state: { created: true, emailSent: order.email_sent } });
     } catch (err) {
       setError(err);
-      if (err.field === "vehicle_id") setStep(1);
-      else if (err.field && err.field.startsWith("lines")) setStep(2);
+      if (stepOf(err.field) !== undefined) setStep(stepOf(err.field));
     } finally {
       setBusy(false);
     }
@@ -101,7 +107,8 @@ export default function NewOrder() {
           </li>
         ))}
       </ol>
-      <Alert>{error && (!error.field || error.field.startsWith("lines")) ? error.message : null}</Alert>
+      {/* Shown unless the message already sits under an input on this step. */}
+      <Alert>{error && (stepOf(error.field) !== step || error.field.startsWith("lines")) ? error.message : null}</Alert>
       <div className="row g-4">
         <div className="col-lg-8">
           {step === 0 && (
