@@ -13,7 +13,8 @@
     "dev:web": "npm run dev --workspace apps/web",
     "build": "npm run build --workspace apps/web",
     "seed": "npm run seed --workspace apps/api --",
-    "test": "npm test --workspace apps/api"
+    "test": "npm test --workspace apps/api",
+    "test:integration": "npm run test:integration --workspace apps/api"
   },
   "engines": {
     "node": ">=18"

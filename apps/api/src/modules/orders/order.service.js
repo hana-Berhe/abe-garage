@@ -417,8 +417,10 @@ async function updateLineStatus(lineId, { status, note }, actor) {
           lineId,
         ]);
         await history.add(conn, order.order_id, actor.id, "job_done", `Job #${lineId}`);
+        // A locking read sees jobs another technician finished a moment ago. A plain read would use this
+        // transaction's older snapshot, and two last jobs finished together would leave the order open.
         const [[left]] = await conn.query(
-          "SELECT COUNT(*) AS open FROM order_lines WHERE order_id = ? AND line_status <> ?",
+          "SELECT COUNT(*) AS open FROM order_lines WHERE order_id = ? AND line_status <> ? FOR UPDATE",
           [order.order_id, L.DONE]
         );
         if (left.open === 0 && order.status === S.IN_PROGRESS) {

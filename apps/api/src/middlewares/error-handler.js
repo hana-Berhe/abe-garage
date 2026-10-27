@@ -10,6 +10,7 @@ function errorHandler(err, req, res, next) {
   if (err instanceof ApiError) return send(res, err.httpStatus, err.message, err.data);
   if (err.type === "entity.parse.failed") return send(res, 400, "Request body is not valid JSON");
   if (err.code === "ER_DUP_ENTRY") return send(res, 409, "This record already exists");
+  if (err.code === "ER_LOCK_DEADLOCK") return send(res, 409, "Someone else was saving the same thing. Please try again.");
   console.error(err);
   return send(res, 500, "Something went wrong on the server");
 }
