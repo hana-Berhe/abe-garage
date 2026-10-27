@@ -22,7 +22,7 @@ async function lockOrder(conn, orderId) {
 
 async function getVatRate(conn) {
   const [rows] = await conn.query("SELECT vat_rate FROM garage_settings WHERE settings_id = 1");
-  if (!rows[0]) throw new ApiError(500, "Garage settings are missing. Run /install.");
+  if (!rows[0]) throw new ApiError(500, "Garage settings are missing. Run the installer (POST /api/install).");
   return rows[0].vat_rate;
 }
 

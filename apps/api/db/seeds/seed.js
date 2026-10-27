@@ -1,5 +1,5 @@
 // Demo data for local work: staff, customers, cars, services and orders in every state.
-// Run after /install:  npm run seed            (adds ~12 demo orders)
+// Run after POST /api/install:  npm run seed            (adds ~12 demo orders)
 //                      npm run seed -- --orders=1000   (extra orders to test list speed, NFR-09)
 require("dotenv").config({ path: require("path").join(__dirname, "..", "..", ".env") });
 process.env.SMTP_HOST = ""; // never email demo customers
@@ -105,7 +105,7 @@ async function demoOrder(car, serviceIds, stage, staff) {
 async function main() {
   const extra = Number((process.argv.find((a) => a.startsWith("--orders=")) || "").split("=")[1] || 0);
   const [[{ n }]] = await pool.query("SELECT COUNT(*) AS n FROM employees WHERE role_id = 3");
-  if (!n) throw new Error("Run GET /install first, then seed.");
+  if (!n) throw new Error("Run POST /api/install first, then seed.");
 
   const staff = await upsertStaff(await bcrypt.hash(PASSWORD, 10));
   const svc = await upsertServices();

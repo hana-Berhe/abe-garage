@@ -3,8 +3,8 @@ import { fetchApi } from "../../shared/api/client";
 const serviceService = {
   list: () => fetchApi("/api/services"),
   listPublic: () => fetchApi("/api/public/services"),
-  create: (service) => fetchApi("/api/service", { method: "POST", body: service }),
-  update: (id, service) => fetchApi(`/api/service/${id}`, { method: "PUT", body: service }),
+  create: (service) => fetchApi("/api/services", { method: "POST", body: service }),
+  update: (id, service) => fetchApi(`/api/services/${id}`, { method: "PATCH", body: service }),
 };
 
 export default serviceService;
