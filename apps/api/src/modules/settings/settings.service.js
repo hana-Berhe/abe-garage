@@ -6,7 +6,7 @@ const COLUMNS = `name, address, phone, email, vat_rate,
 
 async function get() {
   const [rows] = await pool.query(`SELECT ${COLUMNS} FROM garage_settings WHERE settings_id = 1`);
-  if (!rows[0]) throw new ApiError(500, "Garage settings are missing. Run /install.");
+  if (!rows[0]) throw new ApiError(500, "Garage settings are missing. Run the installer (POST /api/install).");
   return rows[0];
 }
 

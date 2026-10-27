@@ -3,7 +3,10 @@ const { ok, created, badField } = require("../../shared/respond");
 const { readPage } = require("../../shared/pagination");
 const { ROLES } = require("../../middlewares/auth");
 const v = require("../../shared/validate");
+const { mergePatch } = require("../../shared/patch");
 const { readEmployee } = require("./employee.validator");
+
+const EDITABLE = ["email", "first_name", "last_name", "phone", "role_id", "active", "password"];
 
 async function login(req, res) {
   const email = v.requireEmail(req.body);
@@ -45,7 +48,8 @@ async function getOne(req, res) {
 
 async function update(req, res) {
   const id = v.requireId(req.params.id, "id", "Employee id");
-  const data = readEmployee(req.body, { passwordRequired: false });
+  const current = await employeeService.getById(id);
+  const data = readEmployee(mergePatch(current, req.body, EDITABLE), { passwordRequired: false });
   if (!req.body.updated_at || Number.isNaN(Date.parse(req.body.updated_at))) {
     throw badField("updated_at", "updated_at from the loaded record is required");
   }

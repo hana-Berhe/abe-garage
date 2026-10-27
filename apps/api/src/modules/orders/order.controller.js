@@ -4,7 +4,10 @@ const { readPage } = require("../../shared/pagination");
 const { readUpdatedAt } = require("../../shared/stale-check");
 const { APPROVAL_METHODS } = require("../../shared/order-codes");
 const v = require("../../shared/validate");
+const { mergePatch } = require("../../shared/patch");
 const { readLine, readLines, readNotes } = require("./order.validator");
+
+const EDITABLE = ["estimated_ready_date", "notes_for_customer", "internal_notes", "lines"];
 
 async function create(req, res) {
   let mileage = null;
@@ -39,7 +42,8 @@ async function getOne(req, res) {
 
 async function update(req, res) {
   const id = v.requireId(req.params.id, "id", "Order id");
-  const data = readNotes(req.body);
+  const merged = mergePatch(await orderService.getById(id), req.body, EDITABLE);
+  const data = readNotes(merged);
   if (req.body.lines !== undefined) data.lines = readLines(req.body);
   return ok(res, "Order saved", await orderService.update(id, data, readUpdatedAt(req.body), req.employee.id));
 }

@@ -33,7 +33,7 @@ cp apps/api/.env.example apps/api/.env        # fill in DB_PASSWORD, JWT_SECRET,
 cp apps/web/.env.example apps/web/.env
 
 npm run dev:api                               # http://localhost:8000
-curl http://localhost:8000/install            # once: tables, roles, settings and the first admin
+curl -X POST http://localhost:8000/api/install  # once: tables, roles, settings and the first admin
 npm run seed                                  # optional: demo staff, customers, services and orders
 npm run dev:web                               # http://localhost:5173
 ```

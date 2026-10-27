@@ -4,7 +4,10 @@ const { readPage } = require("../../shared/pagination");
 const { readUpdatedAt } = require("../../shared/stale-check");
 const { readVehicle } = require("../vehicles/vehicle.validator");
 const v = require("../../shared/validate");
+const { mergePatch } = require("../../shared/patch");
 const { readCustomer } = require("./customer.validator");
+
+const EDITABLE = ["first_name", "last_name", "email", "phone", "active"];
 
 async function create(req, res) {
   const customer = readCustomer(req.body);
@@ -25,7 +28,7 @@ async function getOne(req, res) {
 
 async function update(req, res) {
   const id = v.requireId(req.params.id, "id", "Customer id");
-  const customer = readCustomer(req.body);
+  const customer = readCustomer(mergePatch(await customerService.getById(id), req.body, EDITABLE));
   return ok(res, "Customer saved", await customerService.update(id, customer, readUpdatedAt(req.body)));
 }
 

@@ -2,7 +2,10 @@ const serviceService = require("./service.service");
 const { ok, created, badField } = require("../../shared/respond");
 const { readUpdatedAt } = require("../../shared/stale-check");
 const v = require("../../shared/validate");
+const { mergePatch } = require("../../shared/patch");
 const { readMoney, readService } = require("./service.validator");
+
+const EDITABLE = ["name", "description", "price", "labor_hours", "active"];
 
 async function create(req, res) {
   return created(res, "Service added", await serviceService.create(readService(req.body)));
@@ -18,7 +21,8 @@ async function listPublic(req, res) {
 
 async function update(req, res) {
   const id = v.requireId(req.params.id, "id", "Service id");
-  return ok(res, "Service saved", await serviceService.update(id, readService(req.body), readUpdatedAt(req.body)));
+  const service = readService(mergePatch(await serviceService.getById(id), req.body, EDITABLE));
+  return ok(res, "Service saved", await serviceService.update(id, service, readUpdatedAt(req.body)));
 }
 
 module.exports = { create, list, listPublic, update };

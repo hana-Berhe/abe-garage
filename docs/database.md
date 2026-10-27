@@ -36,7 +36,7 @@ mysql -u root -p -e "CREATE DATABASE abe_garage CHARACTER SET utf8mb4;
   GRANT ALL ON abe_garage.* TO 'abe'@'localhost';"
 cp apps/api/.env.example apps/api/.env      # fill in DB_* and INSTALL_ADMIN_*
 npm run dev:api
-curl http://localhost:8000/install           # once: tables, roles, settings, first admin
+curl -X POST http://localhost:8000/api/install  # once: tables, roles, settings, first admin
 npm run seed                                  # optional demo data
 ```
 
@@ -46,4 +46,4 @@ An existing database made before call-back requests were added needs the new tab
 mysql -u abe -p abe_garage < apps/api/db/migrations/001_callback_requests.sql
 ```
 
-`/install` locks itself once any staff account exists (it then answers 403).
+`POST /api/install` locks itself once any staff account exists (it then answers 403).
