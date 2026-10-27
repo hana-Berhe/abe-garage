@@ -4,19 +4,12 @@ import { useGarage, usePublicServices } from "../useGarage";
 import { reviewsToShow } from "../reviews";
 import ServiceCard from "../components/ServiceCard";
 import CallBand from "../components/CallBand";
-import CallUs from "../components/CallUs";
-import HowItWorks from "../components/HowItWorks";
-import { hoursText } from "../../../layouts/Header";
+import WhyChooseUs from "../components/WhyChooseUs";
 import Icon from "../../../shared/components/Icon";
 import { hour12, telHref } from "../../../shared/lib/format";
 import carArt from "../../../assets/car.svg";
 import gearArt from "../../../assets/gear.svg";
-
-const TRUST = [
-  ["gear", "Skilled mechanics", "Engines, brakes, steering and more"],
-  ["message", "Clear, plain answers", "You know what your car needs and why"],
-  ["mobile", "Follow your car live", "A link shows each step of the repair"],
-];
+import garageArt from "../../../assets/garage.svg";
 
 // FR-WEB-03: a customer pastes the code (or the whole link) from their email.
 function CheckMyCar() {
@@ -59,7 +52,6 @@ function Reviews() {
     <section className="section" id="reviews">
       <div className="wrap">
         <div className="shead">
-          <div className="eyebrow">Reviews</div>
           <h2 className="h2">What our customers say</h2>
           {rating && <p className="lead">{rating.rating} out of 5, from {rating.count} reviews</p>}
         </div>
@@ -91,46 +83,47 @@ export default function Home() {
       <section className="hero">
         <div className="wrap hero-grid">
           <div className="hero-copy">
-            <div className="eyebrow">Your trusted auto repair partner</div>
-            <h1>Expert Care.<br /><em>Every Mile.</em></h1>
-            <p>From engine checks to brake repairs, {g.name || "Abe Garage"} keeps your car running safely. Call us and tell us what is wrong. We give you a clear price before any work starts.</p>
-            <div className="actions">
-              <CallUs />
-              <Link className="btn outline" to="/services">Explore services <Icon name="arrow" size={16} stroke={2.5} /></Link>
-            </div>
-            <div className="hero-facts">
-              <span><Icon name="clock" size={18} />Opens {opens}</span>
-              <span><Icon name="cash" size={18} />Cash payment at pick-up</span>
-              {g.phone && <span><Icon name="phone" size={18} /><a href={telHref(g.phone)}>{g.phone}</a></span>}
-            </div>
+            <div className="eyebrow">Welcome to {g.name || "Abe Garage"}</div>
+            <h1>Tune up your car<br />to the next level</h1>
+            <p>From engine checks to brake repairs, we keep your car running safely. Call us and tell us what is wrong. We give you a clear price before any work starts.</p>
+            {g.phone ? (
+              <a className="play" href={telHref(g.phone)}>
+                <span className="play-btn"><Icon name="phone" size={22} /></span>
+                <span>Call us now<br /><b>{g.phone}</b></span>
+              </a>
+            ) : (
+              <Link className="play" to="/contact">
+                <span className="play-btn"><Icon name="arrow" size={22} stroke={2.5} /></span>
+                <span>Contact us<br /><b>Find the garage</b></span>
+              </Link>
+            )}
           </div>
           <div className="hero-visual">
-            <span className="vertical" aria-hidden="true">BUILT FOR THE ROAD</span>
             <img className="car" src={carArt} alt="" />
-            <div className="chip">
-              <i><Icon name="shield" size={20} /></i>
-              <div><b>No surprise bills</b><small>We ask before any extra work</small></div>
-            </div>
           </div>
         </div>
       </section>
 
-      <section className="trust">
-        <div className="wrap trust-grid">
-          {TRUST.map(([icon, title, text]) => (
-            <div key={title} className="trust-item">
-              <div className="ticon"><Icon name={icon} size={24} /></div>
-              <div><strong>{title}</strong><small>{text}</small></div>
-            </div>
-          ))}
+      <section className="section white">
+        <div className="wrap split">
+          <div className="art">
+            <img src={garageArt} alt="Drawing of the garage front" />
+            <div className="art-badge"><b>{opens.replace(/ ?[AP]M$/, "")}</b>{/PM$/.test(opens) ? "PM" : "AM"}<br />We open</div>
+          </div>
+          <div>
+            <div className="eyebrow">Welcome to our workshop</div>
+            <h2 className="h2">Honest repairs, a clear price first</h2>
+            <p className="lead">We are a local workshop that fixes cars properly and talks to you like a person. No jargon, no pressure, and no work you did not agree to.</p>
+            <p className="lead" style={{ marginTop: 14 }}>We call you and wait for your OK before any extra work. You pay in cash at pick-up and get a clear printed invoice.</p>
+            <Link to="/about" className="btn primary" style={{ marginTop: 28 }}>About us <Icon name="arrow" size={16} stroke={2.5} /></Link>
+          </div>
         </div>
       </section>
 
-      <section className="section on-light" id="services">
+      <section className="section" id="services">
         <div className="wrap">
           <div className="shead">
-            <div className="eyebrow">What we do</div>
-            <h2 className="h2">Mechanical services for<br />everyday driving</h2>
+            <h2 className="h2">Our services</h2>
             <p className="lead">Tell us what is wrong and we check it. You get a clear price from us before any work starts.</p>
           </div>
           <div className="services">
@@ -140,29 +133,23 @@ export default function Home() {
         </div>
       </section>
 
-      <section className="section white on-light" id="why">
-        <div className="wrap split">
-          <div className="art"><img src={gearArt} alt="Drawing of a gear" /><span className="cap">MECHANICAL EXPERTISE</span></div>
-          <div>
-            <div className="eyebrow">Why drivers choose us</div>
-            <h2 className="h2">Real mechanical work.<br />Real peace of mind.</h2>
-            <p className="lead">We are a local workshop that fixes cars properly and talks to you like a person. No jargon, no pressure, and no work you did not agree to.</p>
-            {[
-              "We explain the problem in plain words",
-              "We call you and wait for your OK before any extra work",
-              "Pay in cash at pick-up, with a clear printed invoice",
-              `Open from ${opens}, so you can drop off before work`,
-            ].map((t) => <div key={t} className="check"><span><Icon name="check" size={14} stroke={3} /></span>{t}</div>)}
-            <Link to="/about" className="btn dark" style={{ marginTop: 14 }}>About the garage <Icon name="arrow" size={16} stroke={2.5} /></Link>
+      <section className="quality">
+        <div className="quality-red">
+          <div className="quality-in">
+            <h2>Quality service and customer satisfaction!</h2>
+            <p>Every job starts with a proper check. A named mechanic works on your car, and you hear the price before any work starts. When your car is ready, we tell you straight away.</p>
           </div>
         </div>
+        <div className="quality-art" aria-hidden="true"><img src={gearArt} alt="" /></div>
       </section>
+
+      <WhyChooseUs services={services} />
 
       <section className="section dk-sec" id="live-status">
         <div className="wrap split track">
           <div>
             <div className="eyebrow">Track your repair</div>
-            <h2 className="h2">Your car, live on <em>your phone.</em></h2>
+            <h2 className="h2">Your car, live on your phone</h2>
             <p className="lead">When you drop off your car, we email you a private link. Open it any time to see what has been done and when your car is ready.</p>
             <div className="steps three" style={{ marginTop: 40 }}>
               <div className="step on"><h3>Drop off</h3><p>We check the car in and note what you told us.</p></div>
@@ -187,8 +174,8 @@ export default function Home() {
                     <li className="todo"><span className="dot" />Ready for pick-up</li>
                   </ol>
                   <div className="phone-jobs">
-                    <div><span>Oil change</span><b style={{ color: "#0B6446" }}>Done</b></div>
-                    <div><span>Brake pads</span><b style={{ color: "var(--orange-text)" }}>Working on it</b></div>
+                    <div><span>Oil change</span><span className="pill s2">Done</span></div>
+                    <div><span>Brake pads</span><span className="pill s1">Working on it</span></div>
                   </div>
                 </div>
               </div>
@@ -200,24 +187,6 @@ export default function Home() {
       <Reviews />
 
       <CallBand title="Something wrong with your car?" text="Call us and tell us what is wrong. We give you a price before any work starts." />
-
-      <section className="section dk-sec" id="contact">
-        <div className="wrap contact-grid">
-          <div>
-            <div className="eyebrow">Get in touch</div>
-            <h2 className="h2">Let us get you<br />back on the road.</h2>
-            <p className="lead">Call us, or just drive in. Walk-ins are welcome from {opens}.</p>
-            <div className="info">
-              {g.phone && <div><strong>Phone</strong><a href={telHref(g.phone)}>{g.phone}</a></div>}
-              {g.address && <div><strong>Address</strong>{g.address}</div>}
-              <div><strong>Opening hours</strong>{hoursText(g) || `Opens ${opens}`}</div>
-              {g.email && <div><strong>Email</strong><a href={`mailto:${g.email}`}>{g.email}</a></div>}
-              <div><strong>Payment</strong>Cash only, at pick-up</div>
-            </div>
-          </div>
-          <HowItWorks opens={opens} />
-        </div>
-      </section>
     </>
   );
 }

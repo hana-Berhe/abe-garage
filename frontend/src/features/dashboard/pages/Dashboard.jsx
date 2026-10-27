@@ -6,6 +6,7 @@ import Alert from "../../../shared/components/Alert";
 import { PaidBadge, StatusBadge } from "../../../shared/components/StatusBadge";
 import { ROLES } from "../../../shared/constants/roles";
 import { date, money } from "../../../shared/lib/format";
+import Icon from "../../../shared/components/Icon";
 
 // FR-DSH-02, FR-DSH-03. Each counter opens the matching order list filter. Technicians go to My jobs.
 export default function Dashboard() {
@@ -31,6 +32,16 @@ export default function Dashboard() {
         ["Unpaid", "unpaid", data.unpaid, `${money(data.unpaid_total)} to collect`, "/admin/orders?paid=0"],
       ]
     : [];
+  // Quick links, like the tiles in the classic design. Employees and Services are for the admin only.
+  const isAdmin = employee.role === ROLES.ADMIN;
+  const tiles = [
+    ["Open for all", "All orders", "List of orders", "clipboard", "/admin/orders"],
+    ["Open for the desk", "New order", "Add order", "plus", "/admin/order/new"],
+    ["Open for the desk", "Customers", "See all", "users", "/admin/customers"],
+    isAdmin
+      ? ["Open for admins", "Employees", "See all", "badge", "/admin/employees"]
+      : ["Open for the desk", "Add customer", "Add new", "user", "/admin/customer/new"],
+  ];
   const hour = new Date().getHours();
   const greeting = hour < 12 ? "Good morning" : hour < 18 ? "Good afternoon" : "Good evening";
 
@@ -40,7 +51,19 @@ export default function Dashboard() {
         <h1 className="page-title mb-0">{greeting}, {employee.name.split(" ")[0]}</h1>
         <Link to="/admin/order/new" className="btn btn-brand">+ New order</Link>
       </div>
+      <p className="muted mb-4" style={{ maxWidth: 760 }}>Today in the garage at a glance. Each box opens the matching list.</p>
       <Alert>{error}</Alert>
+      <div className="row g-4 mb-4">
+        {tiles.map(([kicker, title, more, icon, to]) => (
+          <div className="col-6 col-xl-3" key={to}>
+            <Link to={to} className="tile">
+              <small>{kicker}</small>
+              <b>{title}</b>
+              <div className="tile-foot"><span>{more} +</span><Icon name={icon} size={44} stroke={1.2} /></div>
+            </Link>
+          </div>
+        ))}
+      </div>
       {data && (
         <>
           <div className="row g-3 mb-4">
@@ -50,6 +73,7 @@ export default function Dashboard() {
                   <span className={`ag-badge ag-badge--${tone}`}>{label}</span>
                   <div className="counter-value mt-2">{value}</div>
                   <div className="counter-note">{note}</div>
+                  <span className="counter-more">View orders +</span>
                 </Link>
               </div>
             ))}
@@ -65,7 +89,7 @@ export default function Dashboard() {
             ))}
           </div>
           <div className="ag-card p-0">
-            <h2 className="h4 p-3 m-0">Needs attention</h2>
+            <h2 className="h4 p-4 m-0">Needs attention</h2>
             <div className="table-responsive">
               <table className="table table-hover align-middle">
                 <thead><tr><th>Order</th><th>Customer</th><th>Car</th><th className="d-none d-md-table-cell">Opened</th><th>Status</th><th className="text-end">Total</th></tr></thead>
