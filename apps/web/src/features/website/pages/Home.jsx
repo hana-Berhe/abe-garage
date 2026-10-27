@@ -4,7 +4,8 @@ import { useGarage, usePublicServices } from "../useGarage";
 import { reviewsToShow } from "../reviews";
 import ServiceCard from "../components/ServiceCard";
 import CallBand from "../components/CallBand";
-import CallbackForm from "../components/CallbackForm";
+import CallUs from "../components/CallUs";
+import HowItWorks from "../components/HowItWorks";
 import { hoursText } from "../../../layouts/Header";
 import Icon from "../../../shared/components/Icon";
 import { hour12, telHref } from "../../../shared/lib/format";
@@ -92,9 +93,9 @@ export default function Home() {
           <div className="hero-copy">
             <div className="eyebrow">Your trusted auto repair partner</div>
             <h1>Expert Care.<br /><em>Every Mile.</em></h1>
-            <p>From engine checks to brake repairs, {g.name || "Abe Garage"} keeps your car running safely. Tell us what is wrong, and we call you back with a clear price before any work starts.</p>
+            <p>From engine checks to brake repairs, {g.name || "Abe Garage"} keeps your car running safely. Call us and tell us what is wrong. We give you a clear price before any work starts.</p>
             <div className="actions">
-              <Link className="btn primary" to="/contact#callback">Request a call back <Icon name="up" size={16} stroke={2.5} /></Link>
+              <CallUs />
               <Link className="btn outline" to="/services">Explore services <Icon name="arrow" size={16} stroke={2.5} /></Link>
             </div>
             <div className="hero-facts">
@@ -198,14 +199,14 @@ export default function Home() {
 
       <Reviews />
 
-      <CallBand title="Something wrong with your car?" text="Tell us what is wrong. We will call you back and give you a price before any work starts." />
+      <CallBand title="Something wrong with your car?" text="Call us and tell us what is wrong. We give you a price before any work starts." />
 
       <section className="section dk-sec" id="contact">
         <div className="wrap contact-grid">
           <div>
             <div className="eyebrow">Get in touch</div>
             <h2 className="h2">Let us get you<br />back on the road.</h2>
-            <p className="lead">Call us, or leave your number and we call you back. Walk-ins are welcome from {opens}.</p>
+            <p className="lead">Call us, or just drive in. Walk-ins are welcome from {opens}.</p>
             <div className="info">
               {g.phone && <div><strong>Phone</strong><a href={telHref(g.phone)}>{g.phone}</a></div>}
               {g.address && <div><strong>Address</strong>{g.address}</div>}
@@ -214,7 +215,7 @@ export default function Home() {
               <div><strong>Payment</strong>Cash only, at pick-up</div>
             </div>
           </div>
-          <CallbackForm id="callback-home" />
+          <HowItWorks opens={opens} />
         </div>
       </section>
     </>

@@ -51,7 +51,7 @@ export default function About() {
         </div>
       </section>
 
-      <CallBand title="Come and meet us." text={`Drop in from ${hour12(g.opening_time || "08:00")}, call us, or ask us to call you back.`} />
+      <CallBand title="Come and meet us." text={`Drop in from ${hour12(g.opening_time || "08:00")}, or call us.`} />
     </>
   );
 }

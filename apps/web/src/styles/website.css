@@ -199,14 +199,9 @@
 .ag .hero-facts span{display:inline-flex;gap:8px;align-items:center}
 .ag .hero-facts svg{color:var(--orange)}
 
-/* Call-back form */
+/* Form fields (login page) */
 .ag .field input.bad,.ag .field select.bad,.ag .field textarea.bad{border-color:#C0281C;background:#FFF8F7}
 .ag .field .err{color:#A3180F;font-size:12.5px;font-weight:600}
-.ag .hp{position:absolute;left:-9999px;width:1px;height:1px;overflow:hidden}
-.ag .form-ok{display:flex;flex-direction:column;align-items:flex-start;gap:12px}
-.ag .form-ok .tick{width:52px;height:52px;border-radius:50%;background:#DCF2E8;color:#0B6446;display:grid;place-items:center}
-.ag .form-ok h3{margin:0}
-.ag .form-ok p{margin:0;color:var(--muted)}
 .ag .alert-bad{margin-top:16px;background:#FDE6E4;color:#A3180F;border-radius:6px;padding:12px 14px;font-size:14px}
 .ag .btn:disabled{opacity:.6;cursor:wait;transform:none}
 
@@ -286,7 +281,6 @@
 .ag .map img{width:100%;display:block}
 .ag .next{background:#14191E;color:#FFF;border-radius:9px;padding:30px}
 .ag .next .steps{grid-template-columns:1fr;gap:18px;margin-top:22px}
-.ag .form-wrap{border:1px solid var(--line);border-radius:9px;box-shadow:0 20px 50px rgba(16,19,24,.08)}
 
 /* About page */
 .ag .stats{display:grid;grid-template-columns:repeat(3,1fr);gap:16px;margin-top:32px}

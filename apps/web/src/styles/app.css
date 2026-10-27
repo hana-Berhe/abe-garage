@@ -67,7 +67,6 @@ h2, h3, h4 { font-family: var(--ag-font-body); font-weight: 700; }
 .admin-menu nav a { display: flex; align-items: center; gap: 12px; min-height: 44px; padding: 0 var(--ag-space-4); color: var(--ag-on-dark); text-decoration: none; border-radius: var(--ag-radius-control); font-weight: 500; }
 .admin-menu nav a:hover { background: var(--ag-panel); color: #fff; }
 .admin-menu nav a.active { background: #2A3139; color: #fff; font-weight: 600; }
-.admin-menu nav .count { margin-left: auto; min-width: 22px; height: 22px; padding: 0 6px; border-radius: 999px; background: var(--ag-orange); color: var(--ag-ink); font-size: 12px; font-weight: 700; display: grid; place-items: center; }
 .admin-menu nav a .ico { display: inline-flex; color: var(--ag-muted-dark); }
 .admin-menu nav a.active .ico { color: var(--ag-orange); }
 .admin-user { margin-top: auto; border-top: 1px solid #2A3139; padding: var(--ag-space-4) var(--ag-space-2) 0; display: flex; align-items: center; gap: 10px; }
@@ -123,7 +122,5 @@ a.counter:hover { border-color: var(--ag-ink); }
   .print-only { display: block; }
   .ag-card { border: 0; padding: 0; }
 }
-.callback-card { border-top: 4px solid var(--ag-orange); overflow: hidden; }
-.callback-table td { vertical-align: top; }
 .counter-value.money { font-size: clamp(1.3rem, 2vw, 2.2rem); overflow-wrap: anywhere; }
 .ag-card .h4 { font-weight: 700; }
