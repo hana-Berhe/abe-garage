@@ -436,15 +436,36 @@ async function assignTechnician(lineId, technicianId, employeeId) {
   return getById(orderId);
 }
 
+// BE-038: work notes only on approved, in-progress or completed orders, by the assigned technician or the office.
+// A job already started may keep its note while extra work waits for the customer, since it may also be finished then.
+const NOTE_STATUSES = [S.APPROVED, S.IN_PROGRESS, S.COMPLETED];
+
+async function writeNote(conn, order, line, note, actor) {
+  const startedDuringWait = order.status === S.AWAITING_APPROVAL && line.line_status !== L.NOT_STARTED;
+  if (!NOTE_STATUSES.includes(order.status) && !startedDuringWait) {
+    throw new ApiError(409, "Work notes can be added once the customer has approved the work");
+  }
+  await conn.query("UPDATE order_lines SET technician_note = ? WHERE line_id = ?", [note, line.line_id]);
+  await history.add(conn, order.order_id, actor.id, "note_saved", `Job #${line.line_id} work note ${note ? "saved" : "cleared"}`);
+}
+
+async function saveLineNote(lineId, note, actor) {
+  return withTransaction(async (conn) => {
+    const { order, line } = await lockLine(conn, lineId);
+    if (actor.role === ROLES.TECHNICIAN && line.technician_id !== actor.id) {
+      throw new ApiError(403, "This job is assigned to someone else");
+    }
+    await writeNote(conn, order, line, note, actor);
+    return { line_id: line.line_id, technician_note: note };
+  });
+}
+
 // FR-TEC-03..07: start or finish a job, and add a work note. The order status follows its jobs.
 async function updateLineStatus(lineId, { status, note }, actor) {
   const result = await withTransaction(async (conn) => {
     const { order, line } = await lockLine(conn, lineId);
     if (actor.role === ROLES.TECHNICIAN && line.technician_id !== actor.id) {
       throw new ApiError(403, "This job is assigned to someone else");
-    }
-    if (note !== undefined) {
-      await conn.query("UPDATE order_lines SET technician_note = ? WHERE line_id = ?", [note, lineId]);
     }
     let completed = false;
     if (status !== undefined && status !== line.line_status) {
@@ -488,6 +509,12 @@ async function updateLineStatus(lineId, { status, note }, actor) {
         }
       }
     }
+    // The note is saved after a start, so "start with a note" works on a just-approved order.
+    if (note !== undefined) {
+      const [[now]] = await conn.query("SELECT status FROM orders WHERE order_id = ?", [order.order_id]);
+      const [[lineNow]] = await conn.query("SELECT * FROM order_lines WHERE line_id = ?", [lineId]);
+      await writeNote(conn, { ...order, status: now.status }, lineNow, note, actor);
+    }
     return { orderId: order.order_id, completed };
   });
   // After commit: "Your car is ready" (FR-TRK-05).
@@ -524,6 +551,7 @@ module.exports = {
   update,
   addLine,
   recordApproval,
+  saveLineNote,
   assignTechnician,
   updateLineStatus,
   myJobs,

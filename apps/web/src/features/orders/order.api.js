@@ -14,7 +14,7 @@ const orderService = {
     fetchApi(`/api/order-lines/${lineId}/technician`, { method: "PATCH", body: { technician_id } }),
   setLineStatus: (lineId, status, note) =>
     fetchApi(`/api/order-lines/${lineId}/status`, { method: "PATCH", body: note === undefined ? { status } : { status, note } }),
-  saveLineNote: (lineId, note) => fetchApi(`/api/order-lines/${lineId}/status`, { method: "PATCH", body: { note } }),
+  saveLineNote: (lineId, note) => fetchApi(`/api/order-lines/${lineId}/note`, { method: "PATCH", body: { technician_note: note } }),
   myJobs: () => fetchApi("/api/my-jobs"),
 };
 

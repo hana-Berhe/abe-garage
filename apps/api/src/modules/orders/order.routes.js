@@ -15,6 +15,7 @@ router.patch("/api/orders/:id/approval", verifyToken, hasRole([M, A]), ah(contro
 router.patch("/api/order-lines/:id/technician", verifyToken, hasRole([M, A]), ah(controller.assignTechnician));
 // Technicians may only change their own jobs; the service checks that.
 router.patch("/api/order-lines/:id/status", verifyToken, hasRole([T, M, A]), ah(controller.lineStatus));
+router.patch("/api/order-lines/:id/note", verifyToken, hasRole([T, M, A]), ah(controller.lineNote));
 router.get("/api/my-jobs", verifyToken, hasRole([T]), ah(controller.myJobs));
 
 module.exports = router;

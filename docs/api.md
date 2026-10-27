@@ -36,6 +36,7 @@ The account is checked on every request. A role change, a switch-off or a new pa
 | POST | `/api/vehicles` | Add a car; 404 for a missing customer, 409 for a switched-off one | M, A | BE-020 |
 | GET | `/api/customers/:customer_id/vehicles` | Cars of a customer | T, M, A | BE-021 |
 | GET | `/api/vehicles/:vehicle_id` | Car with service history | T, M, A | BE-022, BE-024 |
+| GET | `/api/vehicles/:vehicle_id/orders` | The car's orders, newest first, 10 a page (`?page=&page_size=`), each with its jobs and saved prices | T, M, A | BE-024 |
 | PATCH | `/api/vehicles/:vehicle_id` | Edit a car; 409 if the mileage would go down | M, A | BE-023 |
 | POST | `/api/services` | Add a service | A | BE-025 |
 | GET | `/api/services` | All services, including inactive | T, M, A | BE-026 |
@@ -51,6 +52,7 @@ The account is checked on every request. A role change, a switch-off or a new pa
 | PATCH | `/api/order-lines/:line_id/technician` | Assign a technician | M, A | BE-035 |
 | GET | `/api/my-jobs` | Jobs of the logged-in technician (no internal notes) | T | BE-036 |
 | PATCH | `/api/order-lines/:line_id/status` | Start (1) or finish (2) a job, or save a work note | own T, M, A | BE-037, BE-038 |
+| PATCH | `/api/order-lines/:line_id/note` | `{ technician_note }` (up to 2000 characters). Only once the order is approved (409 before, and on a declined order); written to the history | own T, M, A | BE-038 |
 | POST | `/api/orders/:order_id/invoice` | Issue the invoice once and store a frozen copy (completed orders whose total matches the last approval); 201 first time, 200 after | M, A | BE-040 |
 | GET | `/api/orders/:order_id/invoice` | The stored invoice plus payment details; 404 before it is issued | M, A | BE-041 |
 | PATCH | `/api/orders/:order_id/payment` | Mark paid in cash (once, after the invoice is issued) | M, A | BE-042 |

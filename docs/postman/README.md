@@ -1,6 +1,6 @@
 # Postman collection
 
-`abe-garage.postman_collection.json` has one request for every API address, with success and error examples (69 requests, 149 checks). `abe-garage.postman_environment.json` holds only the base URL, the admin login and the setup key. The password and key are left empty: never commit real ones.
+`abe-garage.postman_collection.json` has one request for every API address, with success and error examples (72 requests, 157 checks). `abe-garage.postman_environment.json` holds only the base URL, the admin login and the setup key. The password and key are left empty: never commit real ones.
 
 1. Import both files into Postman and pick the **Abe Garage local** environment.
 2. Set `baseUrl` (default `http://localhost:8000`), `adminEmail` and `adminPassword` (the `INSTALL_ADMIN_*` values from `apps/api/.env`), and `setupKey` (`INSTALL_SECRET`).
