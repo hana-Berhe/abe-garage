@@ -22,6 +22,10 @@ async function changePassword(req, res) {
   return ok(res, "Password changed. Please log in again.");
 }
 
+async function profile(req, res) {
+  return ok(res, "Get own staff profile successful", await employeeService.getProfile(req.employee.id));
+}
+
 async function create(req, res) {
   const data = readEmployee(req.body, { passwordRequired: true });
   const employee = await employeeService.create(data);
@@ -58,4 +62,4 @@ async function update(req, res) {
   return ok(res, "Employee saved", employee);
 }
 
-module.exports = { login, changePassword, create, list, getOne, update };
+module.exports = { login, changePassword, profile, create, list, getOne, update };

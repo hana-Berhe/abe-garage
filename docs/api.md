@@ -19,11 +19,13 @@ The account is checked on every request. A role change, a switch-off or a new pa
 | POST | `/api/auth/login` | Log in. 5 wrong passwords for one email (or 30 tries from one address) in 15 minutes gives 429 | Public | BE-004 |
 | POST | `/api/auth/forgot-password` | `{ email }`. Always the same 200 answer; an active account gets an email with a one-time link to `/reset-password?token=…` that lasts 15 minutes. 3 per email and 10 per address in 15 minutes | Public | BE-005 |
 | POST | `/api/auth/reset-password` | `{ token, new_password }`. Sets the new password, uses up the link and signs out every session. A missing, used or expired link (or a switched-off account) gives 400. 10 tries per address in 15 minutes | Public | BE-006 |
+| GET | `/api/profile` | My own current details from the database (no password hash or token version) | T, M, A | BE-008 |
 | PATCH | `/api/auth/password` | Change own password (`old_password`, `new_password`); signs out every session | T, M, A | BE-007 |
 | POST | `/api/employees` | Add staff | A | BE-009 |
 | GET | `/api/employees` | List staff (`?role=&active=`); managers get active technicians only | M, A | BE-010 |
 | GET | `/api/employees/:employee_id` | View staff | A | BE-011 |
 | PATCH | `/api/employees/:employee_id` | Edit or switch off staff; 409 if it would leave no active admin | A | BE-012 |
+| GET | `/api/roles` | The three fixed roles, `{ roles: [{ role_id, role_name }] }`, for the employee form | A | BE-013 |
 | GET | `/api/settings` | Garage details, VAT rate, opening and closing time | A | BE-014 |
 | PATCH | `/api/settings` | Change garage settings | A | BE-015 |
 | GET | `/api/public/garage` | Garage name, contact details and hours | Public | extra |
@@ -55,5 +57,4 @@ The account is checked on every request. A role change, a switch-off or a new pa
 | POST | `/api/orders/:order_id/resend-email` | Send the status link or "car is ready" email again | M, A | BE-045 |
 | GET | `/api/dashboard` | Counters, cash totals and the orders that need attention | M, A | BE-046 |
 
-Not built yet: BE-008 (`GET /api/profile`), BE-013 (`GET /api/roles`)
-and BE-039 (`GET /api/orders/:order_id/estimate`).
+Not built yet: BE-039 (`GET /api/orders/:order_id/estimate`).

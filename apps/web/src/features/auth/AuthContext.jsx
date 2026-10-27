@@ -43,6 +43,19 @@ export function AuthProvider({ children }) {
     });
   }, [employee, navigate]);
 
+  // BE-008: the token carries the name and role from login time. Refresh them from the database once per session,
+  // so a name changed by the admin shows straight away. A role change or switch-off ends the session anyway (401/403).
+  const employeeId = employee?.id;
+  useEffect(() => {
+    if (!employeeId) return undefined;
+    let live = true;
+    employeeService
+      .profile()
+      .then((p) => live && setEmployee((cur) => (cur ? { ...cur, role: p.role_id, name: `${p.first_name} ${p.last_name}` } : cur)))
+      .catch(() => {});
+    return () => { live = false; };
+  }, [employeeId]);
+
   const login = useCallback(async (email, password) => {
     const { token } = await employeeService.login(email, password);
     tokenStore.set(token);

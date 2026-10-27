@@ -8,6 +8,7 @@ const { TECHNICIAN: T, MANAGER: M, ADMIN: A } = ROLES;
 
 router.post("/api/auth/login", loginLimits, ah(controller.login));
 router.patch("/api/auth/password", verifyToken, hasRole([T, M, A]), ah(controller.changePassword));
+router.get("/api/profile", verifyToken, hasRole([T, M, A]), ah(controller.profile));
 router.post("/api/employees", verifyToken, hasRole([A]), ah(controller.create));
 router.get("/api/employees", verifyToken, hasRole([M, A]), ah(controller.list));
 router.get("/api/employees/:id", verifyToken, hasRole([A]), ah(controller.getOne));

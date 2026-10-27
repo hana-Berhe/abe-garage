@@ -106,6 +106,17 @@ async function getById(id) {
   return rows[0];
 }
 
+// BE-008: the logged-in person's own details, read fresh from the database (never the password hash or token_version).
+async function getProfile(id) {
+  const [rows] = await pool.query(
+    `SELECT e.employee_id, e.first_name, e.last_name, e.email, e.phone, e.role_id, r.role_name, e.active, e.created_at
+     FROM employees e JOIN roles r ON r.role_id = e.role_id WHERE e.employee_id = ?`,
+    [id]
+  );
+  if (!rows[0]) throw new ApiError(404, "Employee not found");
+  return { ...rows[0], active: rows[0].active === 1 };
+}
+
 // FR-EMP-04, FR-EMP-05, NFR-16. The save only applies if updated_at still matches.
 // BE-012: the garage always keeps at least one active admin, even when two admins edit each other at once.
 async function update(id, data, actingEmployeeId) {
@@ -155,4 +166,4 @@ async function update(id, data, actingEmployeeId) {
   return getById(id);
 }
 
-module.exports = { login, changePassword, create, list, getById, update };
+module.exports = { login, changePassword, create, list, getById, getProfile, update };

@@ -1,15 +1,21 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { useAuth } from "../../auth/AuthContext";
 import employeeService from "../../employees/employee.api";
 import Field from "../../../shared/components/Field";
 import Alert from "../../../shared/components/Alert";
-import { ROLE_NAMES } from "../../../shared/constants/roles";
+import { date } from "../../../shared/lib/format";
 
 export default function Profile() {
-  const { employee, endSession } = useAuth();
+  const { endSession } = useAuth();
+  const [me, setMe] = useState(null);
   const [form, setForm] = useState({ old_password: "", new_password: "", confirm: "" });
   const [error, setError] = useState(null);
   const [busy, setBusy] = useState(false);
+
+  // BE-008: always the saved details, not what the login remembered.
+  useEffect(() => {
+    employeeService.profile().then(setMe).catch(setError);
+  }, []);
 
   const change = (e) => setForm({ ...form, [e.target.name]: e.target.value });
 
@@ -37,7 +43,18 @@ export default function Profile() {
   return (
     <div style={{ maxWidth: 480 }}>
       <h1 className="page-title">My account</h1>
-      <p>{employee.name} · {ROLE_NAMES[employee.role]}</p>
+      {me && (
+        <div className="ag-card p-3">
+          <dl className="kv mb-0">
+            <div><dt>Name</dt><dd>{me.first_name} {me.last_name}</dd></div>
+            <div><dt>Role</dt><dd>{me.role_name}</dd></div>
+            <div><dt>Email</dt><dd>{me.email}</dd></div>
+            <div><dt>Phone</dt><dd>{me.phone || "Not given"}</dd></div>
+            <div><dt>Staff since</dt><dd>{date(me.created_at)}</dd></div>
+          </dl>
+          <p className="muted small mt-2 mb-0">Only the admin can change these details.</p>
+        </div>
+      )}
       <h2 className="h5 mt-4">Change password</h2>
       <Alert>{error && !error.field ? error.message : null}</Alert>
       <form onSubmit={submit} noValidate>
