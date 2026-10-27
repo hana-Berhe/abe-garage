@@ -1,13 +1,20 @@
 const invoiceService = require("./invoice.service");
 const notification = require("../orders/notification.service");
 const orderService = require("../orders/order.service");
-const { ok } = require("../../shared/respond");
+const { ok, created } = require("../../shared/respond");
 const { ORDER_STATUS: S } = require("../../shared/order-codes");
 const v = require("../../shared/validate");
 
 async function getInvoice(req, res) {
   const id = v.requireId(req.params.id, "id", "Order id");
   return ok(res, "Invoice", await invoiceService.getInvoice(id));
+}
+
+// BE-040: 201 when this call issues the invoice, 200 with the same invoice when it was issued before.
+async function issue(req, res) {
+  const id = v.requireId(req.params.id, "id", "Order id");
+  const result = await invoiceService.issueInvoice(id, req.employee.id);
+  return result.created ? created(res, "Invoice issued", result.invoice) : ok(res, "Invoice already issued", result.invoice);
 }
 
 async function markPaid(req, res) {
@@ -23,4 +30,4 @@ async function resendEmail(req, res) {
   return ok(res, sent ? "Email sent" : "The email could not be sent. Check the SMTP settings or use Copy link.", { sent });
 }
 
-module.exports = { getInvoice, markPaid, resendEmail };
+module.exports = { getInvoice, issue, markPaid, resendEmail };

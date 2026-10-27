@@ -20,6 +20,7 @@ export default orderService;
 
 export const invoiceApi = {
   get: (id) => fetchApi(`/api/orders/${id}/invoice`),
+  issue: (id) => fetchApi(`/api/orders/${id}/invoice`, { method: "POST" }),
   markPaid: (id) => fetchApi(`/api/orders/${id}/payment`, { method: "PATCH" }),
   resendEmail: (id) => fetchApi(`/api/orders/${id}/resend-email`, { method: "POST" }),
 };

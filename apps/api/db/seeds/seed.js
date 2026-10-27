@@ -99,7 +99,9 @@ async function demoOrder(car, serviceIds, stage, staff) {
     if (stage === "in_progress" && i === lines.length - 1) return;
     await orderService.updateLineStatus(line.line_id, { status: 2 }, tech);
   }
-  if (stage === "paid") await invoiceService.markPaid(id, manager.id);
+  if (stage !== "paid") return;
+  await invoiceService.issueInvoice(id, manager.id);
+  await invoiceService.markPaid(id, manager.id);
 }
 
 async function main() {

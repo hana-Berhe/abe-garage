@@ -20,6 +20,8 @@ CREATE TABLE IF NOT EXISTS employees (
   password_hash CHAR(60)     NOT NULL,
   role_id       TINYINT UNSIGNED NOT NULL,
   active        TINYINT(1)   NOT NULL DEFAULT 1,
+  -- Raised on a role change, switch-off or new password; older login tokens then stop working.
+  token_version INT UNSIGNED NOT NULL DEFAULT 0,
   created_at    DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
   updated_at    DATETIME(3) NOT NULL DEFAULT CURRENT_TIMESTAMP(3) ON UPDATE CURRENT_TIMESTAMP(3),
   PRIMARY KEY (employee_id),
@@ -101,10 +103,16 @@ CREATE TABLE IF NOT EXISTS orders (
   paid                 TINYINT(1)    NOT NULL DEFAULT 0,
   paid_at              DATETIME      NULL,
   paid_received_by     INT UNSIGNED  NULL,
+  -- The issued invoice: number, time, who issued it and a frozen copy of what it shows (BE-040).
+  invoice_number       VARCHAR(20)   NULL,
+  invoice_issued_at    DATETIME      NULL,
+  invoice_issued_by    INT UNSIGNED  NULL,
+  invoice_snapshot     JSON          NULL,
   created_at           DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
   updated_at           DATETIME(3) NOT NULL DEFAULT CURRENT_TIMESTAMP(3) ON UPDATE CURRENT_TIMESTAMP(3),
   PRIMARY KEY (order_id),
   UNIQUE KEY uq_orders_hash (order_hash),
+  UNIQUE KEY uq_orders_invoice (invoice_number),
   KEY ix_orders_status_paid (status, paid),
   KEY ix_orders_customer (customer_id),
   KEY ix_orders_vehicle_owner (vehicle_id, customer_id),
@@ -113,9 +121,11 @@ CREATE TABLE IF NOT EXISTS orders (
   CONSTRAINT fk_orders_created_by FOREIGN KEY (created_by) REFERENCES employees (employee_id),
   CONSTRAINT fk_orders_approved_by FOREIGN KEY (approved_by) REFERENCES employees (employee_id),
   CONSTRAINT fk_orders_paid_by FOREIGN KEY (paid_received_by) REFERENCES employees (employee_id),
+  CONSTRAINT fk_orders_invoice_by FOREIGN KEY (invoice_issued_by) REFERENCES employees (employee_id),
   CONSTRAINT ck_orders_status CHECK (status BETWEEN 1 AND 5),
   CONSTRAINT ck_orders_money CHECK (subtotal >= 0 AND vat_amount >= 0 AND total >= 0 AND vat_rate >= 0),
-  CONSTRAINT ck_orders_paid CHECK (paid = 0 OR status = 4)
+  CONSTRAINT ck_orders_paid CHECK (paid = 0 OR status = 4),
+  CONSTRAINT ck_orders_invoice CHECK (invoice_number IS NULL OR status = 4)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
 
 CREATE TABLE IF NOT EXISTS order_lines (

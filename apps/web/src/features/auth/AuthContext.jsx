@@ -27,6 +27,13 @@ export function AuthProvider({ children }) {
     navigate("/");
   }, [navigate]);
 
+  // Sends the person back to the login page with a reason, for example after a password change.
+  const endSession = useCallback((message) => {
+    tokenStore.clear();
+    setEmployee(null);
+    navigate("/login", { state: { message } });
+  }, [navigate]);
+
   useEffect(() => {
     if (!employee) tokenStore.clear();
     setUnauthorizedHandler(() => {
@@ -44,7 +51,7 @@ export function AuthProvider({ children }) {
     return who;
   }, []);
 
-  const value = useMemo(() => ({ employee, isLoggedIn: !!employee, login, logout }), [employee, login, logout]);
+  const value = useMemo(() => ({ employee, isLoggedIn: !!employee, login, logout, endSession }), [employee, login, logout, endSession]);
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;
 }
 

@@ -3,7 +3,8 @@ import Totals from "../../../shared/components/Totals";
 import { date, money } from "../../../shared/lib/format";
 
 // The printable estimate and invoice share one A4 layout (FR-EST-01, FR-INV-01, NFR-12).
-export default function OrderDocument({ order, title, number, children }) {
+// docDate is the invoice's issue date; an estimate shows today's date.
+export default function OrderDocument({ order, title, number, docDate, children }) {
   const g = order.garage || {};
   return (
     <article className="order-doc ag-card">
@@ -15,7 +16,7 @@ export default function OrderDocument({ order, title, number, children }) {
         <div className="text-end">
           <div className="ag-display fs-1">{title}</div>
           <div className="fw-semibold">{number}</div>
-          <div className="muted small">Date {date(new Date())}</div>
+          <div className="muted small">Date {date(docDate || new Date())}</div>
         </div>
       </header>
       <div className="row mb-4">
