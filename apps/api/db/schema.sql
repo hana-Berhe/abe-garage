@@ -54,16 +54,16 @@ CREATE TABLE IF NOT EXISTS vehicles (
   type        VARCHAR(30)  NULL,
   mileage     INT UNSIGNED NULL,
   plate       VARCHAR(20)  NOT NULL,
-  vin         VARCHAR(17)  NULL,
+  vin         VARCHAR(32)  NULL,
   color       VARCHAR(30)  NULL,
   created_at  DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
   updated_at  DATETIME(3) NOT NULL DEFAULT CURRENT_TIMESTAMP(3) ON UPDATE CURRENT_TIMESTAMP(3),
   PRIMARY KEY (vehicle_id),
   UNIQUE KEY uq_vehicles_plate (plate),
-  UNIQUE KEY uq_vehicles_vin (vin),
   -- Lets orders point at (vehicle_id, customer_id) so a car must belong to the order's customer.
   UNIQUE KEY uq_vehicles_owner (vehicle_id, customer_id),
   KEY ix_vehicles_customer (customer_id),
+  KEY ix_vehicles_vin (vin),
   CONSTRAINT fk_vehicles_customer FOREIGN KEY (customer_id) REFERENCES customers (customer_id)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
 

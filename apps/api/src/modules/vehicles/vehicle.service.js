@@ -4,7 +4,6 @@ const { duplicateError } = require("../../shared/duplicate");
 
 const DUPLICATES = {
   uq_vehicles_plate: ["plate", "This plate number is already registered"],
-  uq_vehicles_vin: ["vin", "This VIN is already registered"],
 };
 
 const COLUMNS = `v.vehicle_id, v.customer_id, v.year, v.make, v.model, v.type, v.mileage, v.plate, v.vin, v.color,
