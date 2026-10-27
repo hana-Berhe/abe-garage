@@ -29,6 +29,7 @@ import Estimate from "../features/orders/pages/Estimate";
 import MyJobs from "../features/jobs/pages/MyJobs";
 import Invoice from "../features/invoices/pages/Invoice";
 import OrderStatus from "../features/tracking/pages/OrderStatus";
+import CallbackList from "../features/callbacks/pages/CallbackList";
 
 const { TECHNICIAN: T, ADMIN: A } = ROLES;
 
@@ -60,6 +61,7 @@ export default function App() {
         <Route path="customer/:id/edit" element={<PrivateAuthRoute roles={OFFICE}><CustomerForm /></PrivateAuthRoute>} />
         <Route path="customer/:id" element={<CustomerProfile />} />
         <Route path="vehicle/:id" element={<VehiclePage />} />
+        <Route path="callbacks" element={<PrivateAuthRoute roles={OFFICE}><CallbackList /></PrivateAuthRoute>} />
         <Route path="services" element={<PrivateAuthRoute roles={[A]}><ServiceList /></PrivateAuthRoute>} />
         <Route path="employees" element={<PrivateAuthRoute roles={[A]}><EmployeeList /></PrivateAuthRoute>} />
         <Route path="employee/new" element={<PrivateAuthRoute roles={[A]}><EmployeeForm /></PrivateAuthRoute>} />

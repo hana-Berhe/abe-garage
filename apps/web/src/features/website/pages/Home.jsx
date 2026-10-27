@@ -3,15 +3,18 @@ import { Link, useNavigate } from "react-router-dom";
 import { useGarage, usePublicServices } from "../useGarage";
 import { reviewsToShow } from "../reviews";
 import ServiceCard from "../components/ServiceCard";
+import CallBand from "../components/CallBand";
+import CallbackForm from "../components/CallbackForm";
+import { hoursText } from "../../../layouts/Header";
 import Icon from "../../../shared/components/Icon";
 import { hour12, telHref } from "../../../shared/lib/format";
-import heroArt from "../../../assets/hero-y.svg";
+import carArt from "../../../assets/car.svg";
+import gearArt from "../../../assets/gear.svg";
 
-const REASONS = [
-  ["Experienced mechanics", "Every job has one named technician who owns it from start to finish."],
-  ["Fair, fixed prices", "Our prices are on this website. The price you agree is the price you pay."],
-  ["We ask before extra work", "Found something else? We stop and call you with a new price first."],
-  ["Follow your car live", "A private link by email shows each job as it starts and finishes."],
+const TRUST = [
+  ["gear", "Skilled mechanics", "Engines, brakes, steering and more"],
+  ["message", "Clear, plain answers", "You know what your car needs and why"],
+  ["mobile", "Follow your car live", "A link shows each step of the repair"],
 ];
 
 // FR-WEB-03: a customer pastes the code (or the whole link) from their email.
@@ -27,44 +30,49 @@ function CheckMyCar() {
   };
   return (
     <form onSubmit={submit} className="check-car" noValidate>
-      <label htmlFor="check-code" className="form-label fw-bold">Car already with us? Check how it is going</label>
-      <div className="d-flex gap-2">
-        <input id="check-code" className={`form-control${error ? " is-invalid" : ""}`} placeholder="Code or link from your email" value={code} onChange={(e) => { setCode(e.target.value); setError(null); }} />
-        <button type="submit" className="btn btn-ink">Check</button>
+      <label htmlFor="check-code">Car already with us? Check how it is going</label>
+      <div className="row-in">
+        <input id="check-code" placeholder="Code or link from your email" value={code} aria-invalid={!!error}
+          onChange={(e) => { setCode(e.target.value); setError(null); }} />
+        <button type="submit" className="btn primary">Check</button>
       </div>
-      {error && <div className="text-danger small mt-1">{error}</div>}
+      {error && <div className="err">{error}</div>}
     </form>
   );
 }
+
+const Stars = () => (
+  <div className="stars" aria-label="5 out of 5 stars">
+    {[1, 2, 3, 4, 5].map((i) => (
+      <svg key={i} width="16" height="16" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true">
+        <path d="m12 2 3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01z" />
+      </svg>
+    ))}
+  </div>
+);
 
 function Reviews() {
   const { reviews, rating, samples } = reviewsToShow();
   if (!reviews.length) return null;
   return (
-    <section id="reviews" className="sec sec--alt">
-      <div className="site-wrap">
-        <div className="sec-head">
-          <div><span className="tag">Reviews</span><h2 className="d h-section">What customers say</h2></div>
-          {rating && (
-            <div className="review-score">
-              <span className="d">{rating.rating}</span>
-              <span><span className="stars d-block" aria-label="5 stars">★★★★★</span><span className="muted small">from {rating.count} reviews</span></span>
-            </div>
-          )}
+    <section className="section" id="reviews">
+      <div className="wrap">
+        <div className="shead">
+          <div className="eyebrow">Reviews</div>
+          <h2 className="h2">What our customers say</h2>
+          {rating && <p className="lead">{rating.rating} out of 5, from {rating.count} reviews</p>}
         </div>
         <div className="reviews">
           {reviews.map((r, i) => (
-            <figure key={i} className={`review${i === 1 ? " review--dark" : ""}`}>
-              <div className="d-flex justify-content-between align-items-center">
-                <span className="stars" aria-label="5 stars">★★★★★</span>
-                {samples && <span className="sample-label">Sample · replace</span>}
+            <article key={i} className="review">
+              <Stars />
+              {samples && <span className="sample">Sample, replace before launch</span>}
+              <q>{r.text}</q>
+              <div className="who">
+                <span className="av">{r.name.replace(/[^A-Za-z ]/g, "").split(" ").filter(Boolean).map((w) => w[0]).join("").slice(0, 2).toUpperCase() || "?"}</span>
+                <div><b>{r.name}</b><small>{r.job}</small></div>
               </div>
-              <blockquote>“{r.text}”</blockquote>
-              <figcaption>
-                <span className="review__avatar" aria-hidden="true">{(r.name.replace(/\W/g, "")[0] || "?").toUpperCase()}</span>
-                <span><strong className="d-block">{r.name}</strong><small>{r.job}</small></span>
-              </figcaption>
-            </figure>
+            </article>
           ))}
         </div>
       </div>
@@ -75,82 +83,112 @@ function Reviews() {
 export default function Home() {
   const g = useGarage();
   const { services } = usePublicServices();
-  const mapsUrl = g.address ? `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(g.address)}` : "/contact";
+  const opens = g.opening_time ? hour12(g.opening_time) : "8:00 AM";
 
   return (
     <>
-      <section className="site-hero">
-        <div className="site-wrap site-hero__inner">
-          <div className="site-hero__text">
-            <span className="tag">Local · Independent · Honest prices</span>
-            <h1 className="d">Your <span className="text-yellow">trusted</span><br />auto repair<br />partner</h1>
-            <p>Real mechanics, fair prices and no surprises. You get a written price before we start, and a private link to follow your car while we work.</p>
-            <div className="d-flex flex-wrap gap-3">
-              {g.phone && <a href={telHref(g.phone)} className="site-btn site-btn--yellow"><Icon name="phone" size={20} />Call for a price</a>}
-              <Link to="/services" className="site-btn site-btn--ghost">See our prices</Link>
+      <section className="hero">
+        <div className="wrap hero-grid">
+          <div className="hero-copy">
+            <div className="eyebrow">Your trusted auto repair partner</div>
+            <h1>Expert Care.<br /><em>Every Mile.</em></h1>
+            <p>From engine checks to brake repairs, {g.name || "Abe Garage"} keeps your car running safely. Tell us what is wrong, and we call you back with a clear price before any work starts.</p>
+            <div className="actions">
+              <Link className="btn primary" to="/contact#callback">Request a call back <Icon name="up" size={16} stroke={2.5} /></Link>
+              <Link className="btn outline" to="/services">Explore services <Icon name="arrow" size={16} stroke={2.5} /></Link>
+            </div>
+            <div className="hero-facts">
+              <span><Icon name="clock" size={18} />Opens {opens}</span>
+              <span><Icon name="cash" size={18} />Cash payment at pick-up</span>
+              {g.phone && <span><Icon name="phone" size={18} /><a href={telHref(g.phone)}>{g.phone}</a></span>}
             </div>
           </div>
-          <div className="site-hero__art">
-            <div className="art-frame"><img src={heroArt} alt="A red hatchback raised on a lift in the Abe Garage workshop" /></div>
-            <div className="hero-stamp" aria-hidden="true">Price<br />first,<br />always</div>
-            <div className="hero-toast" aria-hidden="true">
-              <span className="hero-toast__icon"><Icon name="check" size={22} stroke={3} /></span>
-              <span><small>JOB 102 · 09:40</small><strong>Oil change done</strong></span>
+          <div className="hero-visual">
+            <span className="vertical" aria-hidden="true">BUILT FOR THE ROAD</span>
+            <img className="car" src={carArt} alt="" />
+            <div className="chip">
+              <i><Icon name="shield" size={20} /></i>
+              <div><b>No surprise bills</b><small>We ask before any extra work</small></div>
             </div>
           </div>
         </div>
-        <div className="hazard" />
       </section>
 
-      <section className="sec sec--paper">
-        <div className="site-wrap">
-          <div className="sec-head">
-            <div><span className="tag">Services</span><h2 className="d h-section">What we fix</h2></div>
-            <p>Fixed prices, before 15% VAT. VAT is added to the subtotal on your bill, and nothing changes after you say yes.</p>
-          </div>
-          <div className="tiles">
-            {(services || []).slice(0, 4).map((s, i) => <ServiceCard key={s.service_id} service={s} index={i} />)}
-          </div>
-          {services && services.length === 0 && <p className="muted">Our price list is coming soon.</p>}
+      <section className="trust">
+        <div className="wrap trust-grid">
+          {TRUST.map(([icon, title, text]) => (
+            <div key={title} className="trust-item">
+              <div className="ticon"><Icon name={icon} size={24} /></div>
+              <div><strong>{title}</strong><small>{text}</small></div>
+            </div>
+          ))}
         </div>
       </section>
 
-      <section className="sec sec--dark">
-        <div className="site-wrap d-flex flex-wrap" style={{ gap: 64 }}>
-          <div className="stack" style={{ flex: "1 1 380px", minWidth: 0 }}>
-            <span className="tag">Why Abe Garage</span>
-            <h2 className="d h-section">Why drivers<br />choose <span className="text-yellow">us</span></h2>
-            <p className="lead-dark">We are a small, independent workshop. No sales targets, no upselling, no fine print. Just the job you agreed to, done right.</p>
-            <div className="why-rule"><small>Our one rule</small><strong>No work starts until you know the price and say yes.</strong></div>
+      <section className="section on-light" id="services">
+        <div className="wrap">
+          <div className="shead">
+            <div className="eyebrow">What we do</div>
+            <h2 className="h2">Mechanical services for<br />everyday driving</h2>
+            <p className="lead">Tell us what is wrong and we check it. You get a clear price from us before any work starts.</p>
           </div>
-          <div className="why-grid" style={{ flex: "1.4 1 520px", minWidth: 0 }}>
-            {REASONS.map(([title, text], i) => (
-              <div key={title}><span className="d">0{i + 1}</span><h3>{title}</h3><p>{text}</p></div>
-            ))}
+          <div className="services">
+            {(services || []).slice(0, 6).map((s, i) => <ServiceCard key={s.service_id} service={s} index={i} />)}
+          </div>
+          {services && services.length === 0 && <p className="lead">Our service list is coming soon.</p>}
+        </div>
+      </section>
+
+      <section className="section white on-light" id="why">
+        <div className="wrap split">
+          <div className="art"><img src={gearArt} alt="Drawing of a gear" /><span className="cap">MECHANICAL EXPERTISE</span></div>
+          <div>
+            <div className="eyebrow">Why drivers choose us</div>
+            <h2 className="h2">Real mechanical work.<br />Real peace of mind.</h2>
+            <p className="lead">We are a local workshop that fixes cars properly and talks to you like a person. No jargon, no pressure, and no work you did not agree to.</p>
+            {[
+              "We explain the problem in plain words",
+              "We call you and wait for your OK before any extra work",
+              "Pay in cash at pick-up, with a clear printed invoice",
+              `Open from ${opens}, so you can drop off before work`,
+            ].map((t) => <div key={t} className="check"><span><Icon name="check" size={14} stroke={3} /></span>{t}</div>)}
+            <Link to="/about" className="btn dark" style={{ marginTop: 14 }}>About the garage <Icon name="arrow" size={16} stroke={2.5} /></Link>
           </div>
         </div>
       </section>
 
-      <Reviews />
-
-      <section id="live-status" className="sec sec--yellow">
-        <div className="site-wrap split">
-          <div className="stack" style={{ flexGrow: 1.2 }}>
-            <span className="mono fw-bold small" style={{ letterSpacing: "0.12em" }}>NO APP · NO ACCOUNT</span>
-            <h2 className="d h-section">Your car, live on your phone</h2>
-            <p className="m-0 fs-5" style={{ maxWidth: 520 }}>When we write your price, we email you a private link. Open it any time to see what is done, what is next and the total you agreed.</p>
-            <div style={{ maxWidth: 480 }}><CheckMyCar /></div>
+      <section className="section dk-sec" id="live-status">
+        <div className="wrap split track">
+          <div>
+            <div className="eyebrow">Track your repair</div>
+            <h2 className="h2">Your car, live on <em>your phone.</em></h2>
+            <p className="lead">When you drop off your car, we email you a private link. Open it any time to see what has been done and when your car is ready.</p>
+            <div className="steps three" style={{ marginTop: 40 }}>
+              <div className="step on"><h3>Drop off</h3><p>We check the car in and note what you told us.</p></div>
+              <div className="step"><h3>We call you</h3><p>You hear the price and say yes or no.</p></div>
+              <div className="step"><h3>Pick up</h3><p>We tell you when it is ready. Pay cash at the desk.</p></div>
+            </div>
+            <CheckMyCar />
           </div>
           <div aria-hidden="true">
-            <div className="phone-mock">
-              <div className="phone-mock__screen">
-                <div className="phone-mock__bar"><span className="mark"><Icon name="wrench" size={16} /></span><span className="d fs-4">Abe Garage</span></div>
-                <div className="phone-mock__body">
-                  <div><span className="mono muted" style={{ fontSize: 11 }}>ORDER 102 · DEMO-101</span><div className="d" style={{ fontSize: 30 }}>Being repaired</div></div>
-                  <div className="meter"><span style={{ width: "62%" }} /></div>
-                  <div className="phone-mock__row"><span>Oil change</span><strong className="job-state--2">Done</strong></div>
-                  <div className="phone-mock__row"><span>Brakes</span><strong className="job-state--1">Working on it</strong></div>
-                  <div className="phone-mock__row border-top border-2 border-dark pt-2"><span className="muted small">Total with VAT</span><strong>$264.50</strong></div>
+            <div className="phone">
+              <div className="phone-in">
+                <div className="phone-top">
+                  <div className="meta"><span>Abe Garage</span><span>Order 102</span></div>
+                  <b>Your car is being repaired</b>
+                  <div className="car">2017 Honda Fit <span className="plate">DEMO-101</span></div>
+                </div>
+                <div className="phone-body">
+                  <ol className="prog mini">
+                    <li className="done"><span className="dot"><Icon name="check" size={13} stroke={3} /></span>Checked in at 8:05 AM</li>
+                    <li className="done"><span className="dot"><Icon name="check" size={13} stroke={3} /></span>You approved the work</li>
+                    <li className="now"><span className="dot" />Being repaired now</li>
+                    <li className="todo"><span className="dot" />Ready for pick-up</li>
+                  </ol>
+                  <div className="phone-jobs">
+                    <div><span>Oil change</span><b style={{ color: "#0B6446" }}>Done</b></div>
+                    <div><span>Brake pads</span><b style={{ color: "var(--orange-text)" }}>Working on it</b></div>
+                  </div>
                 </div>
               </div>
             </div>
@@ -158,29 +196,25 @@ export default function Home() {
         </div>
       </section>
 
-      <section className="sec sec--paper">
-        <div className="site-wrap d-flex flex-wrap align-items-stretch" style={{ gap: 48 }}>
-          <div className="stack" style={{ flex: "1 1 400px", minWidth: 0 }}>
-            <span className="tag">Contact and location</span>
-            <h2 className="d h-section">Come see us</h2>
-            {g.phone && <a href={telHref(g.phone)} className="d big-phone">{g.phone}</a>}
-            <div className="info-list">
-              <div><span>Address</span><strong>{g.address || "–"}</strong></div>
-              <div><span>Hours</span><strong>{g.opening_time ? `${hour12(g.opening_time)}${g.closing_time ? ` to ${hour12(g.closing_time)}` : ""}` : "–"}</strong></div>
-              <div><span>Email</span><strong>{g.email || "–"}</strong></div>
-              <div><span>Payment</span><strong>Cash at pickup</strong></div>
-            </div>
-            <div className="d-flex flex-wrap gap-2">
-              {g.phone && <a href={telHref(g.phone)} className="site-btn site-btn--ink">Call us</a>}
-              <a href={mapsUrl} target="_blank" rel="noreferrer" className="site-btn site-btn--outline">Get directions</a>
-            </div>
-          </div>
-          <div className="map-box" style={{ flex: "1.3 1 460px", minWidth: 0 }}>
-            <div className="map-box__pin">
-              <span>{g.name || "Abe Garage"}</span>
-              <Icon name="pin" size={36} stroke={2.5} />
+      <Reviews />
+
+      <CallBand title="Something wrong with your car?" text="Tell us what is wrong. We will call you back and give you a price before any work starts." />
+
+      <section className="section dk-sec" id="contact">
+        <div className="wrap contact-grid">
+          <div>
+            <div className="eyebrow">Get in touch</div>
+            <h2 className="h2">Let us get you<br />back on the road.</h2>
+            <p className="lead">Call us, or leave your number and we call you back. Walk-ins are welcome from {opens}.</p>
+            <div className="info">
+              {g.phone && <div><strong>Phone</strong><a href={telHref(g.phone)}>{g.phone}</a></div>}
+              {g.address && <div><strong>Address</strong>{g.address}</div>}
+              <div><strong>Opening hours</strong>{hoursText(g) || `Opens ${opens}`}</div>
+              {g.email && <div><strong>Email</strong><a href={`mailto:${g.email}`}>{g.email}</a></div>}
+              <div><strong>Payment</strong>Cash only, at pick-up</div>
             </div>
           </div>
+          <CallbackForm id="callback-home" />
         </div>
       </section>
     </>

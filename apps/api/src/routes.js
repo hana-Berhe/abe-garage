@@ -11,5 +11,6 @@ router.use(require("./modules/orders/order.routes"));
 router.use(require("./modules/invoices/invoice.routes"));
 router.use(require("./modules/public/public.routes"));
 router.use(require("./modules/dashboard/dashboard.routes"));
+router.use(require("./modules/callbacks/callback.routes"));
 
 module.exports = router;

@@ -19,9 +19,9 @@ function useScrollOnNavigate() {
 export default function PublicLayout() {
   useScrollOnNavigate();
   return (
-    <div className="site-page d-flex flex-column min-vh-100">
+    <div className="ag">
       <Header />
-      <main className="flex-grow-1">
+      <main>
         <Outlet />
       </main>
       <Footer />

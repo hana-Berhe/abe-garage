@@ -127,6 +127,23 @@ async function main() {
     ];
     for (const [car, names, stage] of plan) await demoOrder(cars[car], names.map((x) => svc[x]), stage, staff);
   }
+  const [[{ callbacks }]] = await pool.query("SELECT COUNT(*) AS callbacks FROM callback_requests");
+  if (callbacks === 0) {
+    // [name, phone, car, service or null for "Not sure", problem, best time, already called]
+    const requests = [
+      ["Hanna Girma", "+251 911 000 233", "2016 Toyota Vitz", "Brakes", "Squeaking noise when I brake, mostly in the morning.", "morning", false],
+      ["Daniel Okafor", "+251 911 000 418", "2012 Nissan X-Trail", null, "Engine light came on yesterday. Can I bring it before work?", "any", false],
+      ["Mia Tan", "+251 911 000 561", "2019 Kia Picanto", "Full service", "Would like a quote for a full service.", "afternoon", false],
+      ["Peter Wolde", "+251 911 000 377", "2014 Mazda 3", "Wheel alignment", "Car pulls to the left.", "any", true],
+    ];
+    for (const [name, phone, car, service, problem, bestTime, called] of requests) {
+      await pool.query(
+        `INSERT INTO callback_requests (full_name, phone, car, service_id, problem, best_time, status, called_by, called_at)
+         VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+        [name, phone, car, service ? svc[service] : null, problem, bestTime, called ? 1 : 0, called ? staff.Dana : null, called ? new Date() : null]
+      );
+    }
+  }
   for (let i = 0; i < extra; i++) {
     await demoOrder(cars[i % cars.length], [svc["Oil change"]], ["awaiting", "paid", "completed"][i % 3], staff);
     if (i % 100 === 99) console.log(`  ${i + 1} extra orders`);

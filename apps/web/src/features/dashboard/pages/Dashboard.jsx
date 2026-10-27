@@ -6,6 +6,7 @@ import Alert from "../../../shared/components/Alert";
 import { PaidBadge, StatusBadge } from "../../../shared/components/StatusBadge";
 import { ROLES } from "../../../shared/constants/roles";
 import { date, money } from "../../../shared/lib/format";
+import CallbackTable from "../../callbacks/components/CallbackTable";
 
 // FR-DSH-02, FR-DSH-03. Each counter opens the matching order list filter. Technicians go to My jobs.
 export default function Dashboard() {
@@ -14,8 +15,9 @@ export default function Dashboard() {
   const [error, setError] = useState(null);
   const isTech = employee.role === ROLES.TECHNICIAN;
 
+  const load = () => dashboardApi.get().then(setData).catch((e) => setError(e.message));
   useEffect(() => {
-    if (!isTech) dashboardApi.get().then(setData).catch((e) => setError(e.message));
+    if (!isTech) load();
   }, [isTech]);
 
   if (isTech) return <Navigate to="/admin/my-jobs" replace />;
@@ -63,6 +65,19 @@ export default function Dashboard() {
               </div>
             ))}
           </div>
+          <section id="callbacks" className="ag-card p-0 mb-4 callback-card">
+            <div className="d-flex flex-wrap justify-content-between align-items-center gap-2 p-3">
+              <div>
+                <h2 className="h4 m-0">Call-back requests from the website</h2>
+                <p className="muted small m-0">Customers who asked for a call or a price. Nothing is booked until you speak to them.</p>
+              </div>
+              <div className="d-flex align-items-center gap-2">
+                {data.new_callbacks > 0 && <span className="ag-badge ag-badge--new">{data.new_callbacks} new</span>}
+                <Link to="/admin/callbacks" className="btn btn-sm btn-outline-secondary">See all</Link>
+              </div>
+            </div>
+            <CallbackTable rows={data.callbacks} onChanged={load} empty="No call-back requests yet." />
+          </section>
           <div className="ag-card p-0">
             <h2 className="h4 p-3 m-0">Needs attention</h2>
             <div className="table-responsive">

@@ -15,6 +15,7 @@ MySQL 8, InnoDB, utf8mb4. The whole schema is in [`apps/api/db/schema.sql`](../a
 | `order_lines` | the jobs in an order, with a copied price, one technician and a status (0 Not started, 1 Started, 2 Done) |
 | `order_history` | who did what and when (created, approved, job_started, paid, email_sent, …) |
 | `garage_settings` | the single row of garage details and the VAT rate (15%) |
+| `callback_requests` | "Request a call back" forms from the website: name, phone, car, service (empty means "Not sure"), problem, best time to call, and status 0 New or 1 Called (with who called and when) |
 
 ## Rules the database enforces
 
@@ -23,6 +24,7 @@ MySQL 8, InnoDB, utf8mb4. The whole schema is in [`apps/api/db/schema.sql`](../a
 - `status` 1 to 5, `line_status` 0 to 2, prices of 0 or more.
 - `paid` can only be 1 when `status` is 4 (Completed).
 - Only one `garage_settings` row.
+- A call-back `status` is 0 or 1, and `best_time` is `any`, `morning` or `afternoon`.
 - No cascading deletes.
 - `updated_at` keeps milliseconds so stale edits are always caught.
 
@@ -36,6 +38,12 @@ cp apps/api/.env.example apps/api/.env      # fill in DB_* and INSTALL_ADMIN_*
 npm run dev:api
 curl http://localhost:8000/install           # once: tables, roles, settings, first admin
 npm run seed                                  # optional demo data
+```
+
+An existing database made before call-back requests were added needs the new table once:
+
+```bash
+mysql -u abe -p abe_garage < apps/api/db/migrations/001_callback_requests.sql
 ```
 
 `/install` locks itself once any staff account exists (it then answers 403).
