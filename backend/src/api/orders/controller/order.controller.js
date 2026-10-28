@@ -4,14 +4,14 @@ import { readPage } from "../../../shared/pagination.js";
 import { ORDER_STATUS } from "../../../shared/order-codes.js";
 import { mergePatch } from "../../../shared/patch.js";
 import { ROLES } from "../../../middlewares/auth.js";
-import { NOTES, EDITABLE, isPastDate, toLine } from "../validations/order.validation.js";
+import { NOTES, EDITABLE, isPastDate } from "../validations/order.validation.js";
 
 // The routes check every field first (validations/order.validation.js).
 const pickNotes = (source) => Object.fromEntries(NOTES.map((name) => [name, source[name]]));
 
 async function create(req, res) {
   const { customer_id, vehicle_id, mileage, lines } = req.body;
-  const data = { customer_id, vehicle_id, lines: lines.map(toLine), mileage, ...pickNotes(req.body) };
+  const data = { customer_id, vehicle_id, lines, mileage, ...pickNotes(req.body) };
   const order = await orderService.create(data, req.employee.id);
   return created(res, "Order created", order);
 }
@@ -50,12 +50,12 @@ async function update(req, res) {
     }
     if (isPastDate(data.estimated_ready_date)) throw badField("estimated_ready_date", "The ready date can't be in the past");
   }
-  if (req.body.lines !== undefined) data.lines = req.body.lines.map(toLine);
+  if (req.body.lines !== undefined) data.lines = req.body.lines;
   return ok(res, "Order saved", await orderService.update(id, data, new Date(req.body.updated_at), req.employee.id));
 }
 
 async function addLine(req, res) {
-  return created(res, "Job added. The order needs the customer's approval again.", await orderService.addLine(req.params.id, toLine(req.body), req.employee.id));
+  return created(res, "Job added. The order needs the customer's approval again.", await orderService.addLine(req.params.id, req.body, req.employee.id));
 }
 
 async function approval(req, res) {

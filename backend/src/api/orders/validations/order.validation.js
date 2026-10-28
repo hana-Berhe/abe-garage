@@ -1,4 +1,4 @@
-import { body, param, query } from "express-validator";
+import { z } from "zod";
 import { APPROVAL_METHODS } from "../../../shared/order-codes.js";
 import { localToday } from "../../../shared/time.js";
 import * as r from "../../../shared/rules.js";
@@ -8,144 +8,149 @@ const EDITABLE = [...NOTES, "lines"];
 
 const DATE_RE = /^\d{4}-\d{2}-\d{2}$/;
 
-const isObject = (value) => !!value && typeof value === "object" && !Array.isArray(value);
-
 // BE-029: a ready date can't be in the past (today in the garage's time zone is fine).
-// On an edit the controller calls this only when the date changed, so an order whose date has passed can
+// On an edit the controller checks this only when the date changed, so an order whose date has passed can
 // still get a new note.
 const isPastDate = (date) => !!date && date < localToday();
 
-function readyDate() {
-  return body("estimated_ready_date")
-    .customSanitizer((value) => (r.isEmpty(value) ? null : value))
-    .custom((value) => value === null || (DATE_RE.test(value) && !Number.isNaN(Date.parse(value))))
-    .withMessage("Ready date is not a valid date");
-}
+const readyDate = () =>
+  z.preprocess(
+    r.emptyToNull,
+    z.any().refine((date) => date === null || (DATE_RE.test(date) && !Number.isNaN(Date.parse(date))), "Ready date is not a valid date")
+  );
 
-const notesRules = () => [
-  readyDate(),
-  r.optionalText("notes_for_customer", "Note for the customer", 2000),
-  r.optionalText("internal_notes", "Internal note", 2000),
-];
+const notesShape = () => ({
+  estimated_ready_date: readyDate(),
+  notes_for_customer: r.optionalText("Note for the customer", 2000),
+  internal_notes: r.optionalText("Internal note", 2000),
+});
+
+// Checks one value with a field schema; on failure adds its first message under `path`.
+function check(ctx, schema, value, path) {
+  const result = schema.safeParse(value);
+  if (result.success) return result.data;
+  ctx.addIssue({ code: "custom", path, message: result.error.issues[0].message });
+  return z.NEVER;
+}
 
 // A line is { service_id, price? } or an extra item { description, price }. Prices never come from the
 // browser for list services unless staff typed a custom price (FR-ORD-03).
 // On an estimate edit a line may also carry the line_id of the job it changes, so that job keeps its number
-// and its technician.
-// prefix is "lines.*." for the lines of an order, or "" when the body is one line.
-function lineRules(prefix, { withLineId = false } = {}) {
-  const lineOf = prefix ? ({ req, pathValues }) => req.body.lines[pathValues[0]] : ({ req }) => req.body;
-  const serviceLine = (meta) => isObject(lineOf(meta)) && !!lineOf(meta).service_id;
-  const extraLine = (meta) => isObject(lineOf(meta)) && !lineOf(meta).service_id;
-  const at = (when) => (field) => body(field).if((value, meta) => when(value, meta));
-  const rules = [
-    r.requireId(`${prefix}service_id`, "Service", at((value) => !!value)),
-    r.requireText(`${prefix}description`, "Extra item description", 255, at((value, meta) => extraLine(meta))),
-    r.money(`${prefix}price`, "Price", at((value, meta) => serviceLine(meta) && !r.isEmpty(value))),
-    r.money(`${prefix}price`, "Extra item price", at((value, meta) => extraLine(meta))),
-  ];
-  if (prefix) rules.unshift(body("lines.*").custom(isObject).withMessage("Job is not valid"));
-  if (withLineId) rules.splice(1, 0, r.requireId(`${prefix}line_id`, "Job", (field) => body(field).optional({ values: "null" })));
-  return rules;
-}
+// and its technician. The result is the line in the shape the service takes.
+const lineSchema = ({ withLineId = false } = {}) =>
+  z.looseObject({}, { error: "Job is not valid" }).transform((raw, ctx) => {
+    const lineId = withLineId && raw.line_id != null ? check(ctx, r.requireId("Job"), raw.line_id, ["line_id"]) : undefined;
+    let line;
+    if (raw.service_id) {
+      line = { service_id: check(ctx, r.requireId("Service"), raw.service_id, ["service_id"]) };
+      if (!r.isEmpty(raw.price)) line.price = check(ctx, r.money("Price"), raw.price, ["price"]);
+    } else {
+      const description = check(ctx, r.requireText("Extra item description"), raw.description, ["description"]);
+      line = { service_id: null, description, price: check(ctx, r.money("Extra item price"), raw.price, ["price"]) };
+    }
+    if (lineId) line.line_id = lineId;
+    return line;
+  });
 
 // allowEmpty: an estimate edit may remove every unstarted job when started jobs stay on the order
 // (the customer said no to the extra work); the service checks that at least one job remains.
-// optional: an edit may leave the lines out. Only the list itself is optional; inside it every line is checked.
-function linesRules({ allowEmpty = false, withLineId = false, optional = false } = {}) {
-  const list = optional ? body("lines").optional() : body("lines");
-  return [
-    list
-      .custom((lines) => Array.isArray(lines) && (lines.length > 0 || allowEmpty)).withMessage("Choose at least one service").bail()
-      .custom((lines) => lines.length <= 50).withMessage("Too many jobs on one order"),
-    ...lineRules("lines.*.", { withLineId }),
-  ];
-}
+const linesSchema = ({ allowEmpty = false, withLineId = false } = {}) =>
+  z.array(lineSchema({ withLineId }), { error: "Choose at least one service" })
+    .min(allowEmpty ? 0 : 1, "Choose at least one service")
+    .max(50, "Too many jobs on one order");
 
-// The checked line, in a fixed shape for the service.
-function toLine(raw) {
-  const line = raw.service_id
-    ? { service_id: raw.service_id, ...(r.isEmpty(raw.price) ? {} : { price: raw.price }) }
-    : { service_id: null, description: raw.description, price: raw.price };
-  if (raw.line_id) line.line_id = raw.line_id;
-  return line;
-}
+const orderId = { params: r.idParams("Order id") };
 
-const orderId = [r.requireId("id", "Order id", param)];
+const createOrder = {
+  body: z.object({
+    mileage: z.preprocess(
+      r.emptyToNull,
+      z.any()
+        .refine((value) => value === null || (Number.isInteger(Number(value)) && Number(value) >= 0), "Mileage must be a whole number")
+        .transform((value) => (value === null ? null : Number(value)))
+    ),
+    customer_id: r.requireId("Customer"),
+    vehicle_id: r.requireId("Car"),
+    lines: linesSchema(),
+    ...notesShape(),
+    estimated_ready_date: readyDate().refine((date) => !isPastDate(date), "The ready date can't be in the past"),
+  }),
+};
 
-const createOrder = [
-  body("mileage")
-    .customSanitizer((value) => (r.isEmpty(value) ? null : value))
-    .custom((value) => value === null || (Number.isInteger(Number(value)) && Number(value) >= 0)).withMessage("Mileage must be a whole number").bail()
-    .customSanitizer((value) => (value === null ? null : Number(value))),
-  r.requireId("customer_id", "Customer"),
-  r.requireId("vehicle_id", "Car"),
-  ...linesRules(),
-  ...notesRules(),
-  body("estimated_ready_date").custom((date) => !isPastDate(date)).withMessage("The ready date can't be in the past"),
-];
+const updateOrder = {
+  params: r.idParams("Order id"),
+  body: r.editable({ ...notesShape(), lines: linesSchema({ allowEmpty: true, withLineId: true }) }),
+};
 
-const updateOrder = [
-  ...orderId,
-  r.somethingToChange(EDITABLE),
-  ...r.editable(notesRules()),
-  ...linesRules({ allowEmpty: true, withLineId: true, optional: true }),
-  r.requireUpdatedAt(),
-];
+const addLine = { params: r.idParams("Order id"), body: lineSchema() };
 
-const addLine = [...orderId, ...lineRules("")];
-
-const approval = [
-  ...orderId,
-  body("decision").custom((decision) => ["approve", "decline"].includes(decision)).withMessage("Choose approve or decline"),
-  body("method").custom((method) => APPROVAL_METHODS.includes(method)).withMessage("Choose in person or by phone"),
-  r.optionalText("note", "Note", 150),
-];
-
-const jobId = [r.requireId("id", "Job id", param)];
+const approval = {
+  params: r.idParams("Order id"),
+  body: z.object({
+    decision: z.any().refine((decision) => ["approve", "decline"].includes(decision), "Choose approve or decline"),
+    method: z.any().refine((method) => APPROVAL_METHODS.includes(method), "Choose in person or by phone"),
+    note: r.optionalText("Note", 150),
+  }),
+};
 
 // BE-035: there is no un-assign; a job always moves to another technician.
-const assignTechnician = [...jobId, r.requireId("technician_id", "Technician")];
+const assignTechnician = { params: r.idParams("Job id"), body: z.object({ technician_id: r.requireId("Technician") }) };
 
-const lineStatus = [
-  ...jobId,
-  body("status").optional().customSanitizer(Number)
-    .custom((status) => [1, 2].includes(status)).withMessage("Status must be 1 (Started) or 2 (Done)"),
-  r.optionalText("note", "Work note", 2000).optional(),
-  r.somethingToChange(["status", "note"], "Nothing to change"),
-];
+const lineStatus = {
+  params: r.idParams("Job id"),
+  body: r.editable(
+    {
+      status: z.any().transform(Number).refine((status) => [1, 2].includes(status), "Status must be 1 (Started) or 2 (Done)"),
+      note: r.optionalText("Work note", 2000),
+    },
+    { updatedAt: false, nothing: "Nothing to change" }
+  ),
+};
 
 // BE-038
-const lineNote = [
-  ...jobId,
-  body("technician_note").exists().withMessage("Write a work note"),
-  r.optionalText("technician_note", "Work note", 2000),
-];
+const lineNote = {
+  params: r.idParams("Job id"),
+  body: z.object({
+    technician_note: z.any().refine((note) => note !== undefined, "Write a work note").pipe(r.optionalText("Work note", 2000)),
+  }),
+};
 
 // BE-030: ?status, ?paid (true|false or 1|0; missing means either), ?customer_id, ?vehicle_id and
-// ?unpaid_only (completed and not yet paid).
-function queryFlag(field) {
-  return query(field)
-    .customSanitizer((value) => (value === undefined || value === "" ? null : value))
-    .custom((value) => [null, "true", "1", "false", "0"].includes(value)).withMessage(`${field} must be true or false`).bail()
-    .customSanitizer((value) => (value === null ? null : value === "true" || value === "1"));
-}
+// ?unpaid_only (completed and not yet paid). Other query fields (page, search) pass through untouched.
+const queryFlag = (field) =>
+  z.preprocess(
+    (value) => (value === undefined || value === "" ? null : value),
+    z.any()
+      .refine((value) => [null, "true", "1", "false", "0"].includes(value), `${field} must be true or false`)
+      .transform((value) => (value === null ? null : value === "true" || value === "1"))
+  );
 
-const queryId = (field, label) => r.requireId(field, label, (f) => query(f).customSanitizer((value) => (value === "" ? undefined : value)).optional());
+const queryId = (label) => z.preprocess((value) => (value === "" ? undefined : value), r.requireId(label).optional());
 
-const listOrders = [
-  query("status")
-    .customSanitizer((value) => (value ? Number(value) : null))
-    .custom((status) => status === null || (status >= 1 && status <= 5)).withMessage("Unknown status"),
-  queryFlag("paid"),
-  queryFlag("unpaid_only").bail()
-    .custom((unpaidOnly, { req }) => unpaidOnly !== true || (req.query.paid !== true && (req.query.status === null || req.query.status === 4)))
-    .withMessage("Unpaid (completed) only covers completed orders that aren't paid, so it can't be combined with Paid or another status"),
-  queryId("customer_id", "Customer"),
-  queryId("vehicle_id", "Car"),
-];
+const listOrders = {
+  query: z
+    .looseObject({
+      status: z.preprocess(
+        (value) => (value ? Number(value) : null),
+        z.any().refine((status) => status === null || (status >= 1 && status <= 5), "Unknown status")
+      ),
+      paid: queryFlag("paid"),
+      unpaid_only: queryFlag("unpaid_only"),
+      customer_id: queryId("Customer"),
+      vehicle_id: queryId("Car"),
+    })
+    .superRefine((q, ctx) => {
+      if (q.unpaid_only === true && (q.paid === true || (q.status !== null && q.status !== 4))) {
+        ctx.addIssue({
+          code: "custom",
+          path: ["unpaid_only"],
+          message: "Unpaid (completed) only covers completed orders that aren't paid, so it can't be combined with Paid or another status",
+        });
+      }
+    }),
+};
 
 export {
-  NOTES, EDITABLE, isPastDate, toLine, orderId, createOrder, updateOrder, addLine, approval, assignTechnician,
-  lineStatus, lineNote, listOrders,
+  NOTES, EDITABLE, isPastDate, orderId, createOrder, updateOrder, addLine, approval, assignTechnician, lineStatus,
+  lineNote, listOrders,
 };

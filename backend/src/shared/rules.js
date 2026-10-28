@@ -1,98 +1,90 @@
-import { body } from "express-validator";
+import { z } from "zod";
 
-// Rule builders for express-validator, shared by every feature's validations file.
-// Each keeps the app's own message, and its sanitizers leave the cleaned value on the request
-// (trimmed text, numbers, 0/1 flags), so controllers read req.body, req.params and req.query directly.
-// `at` is where the field is: body (the default), param or query.
+// Zod field schemas shared by every feature's validations file.
+// Each keeps the app's own message, and turns the input into the value the service saves
+// (trimmed text, numbers, 0/1 flags, "12.50" money), so controllers read req.body, req.params and req.query directly.
 
 const EMAIL_RE = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 
-const isFilledText = (value) => typeof value === "string" && value.trim() !== "";
 const isEmpty = (value) => value === undefined || value === null || value === "";
+const emptyToNull = (value) => (isEmpty(value) ? null : value);
+const validDate = (value) => !!value && !Number.isNaN(Date.parse(value));
 
-function requireText(field, label, max = 255, at = body) {
-  return at(field)
-    .custom(isFilledText).withMessage(`${label} is required`).bail()
-    .customSanitizer((value) => value.trim())
-    .custom((value) => value.length <= max).withMessage(`${label} is too long (max ${max})`);
-}
+const requireText = (label, max = 255) =>
+  z.string({ error: `${label} is required` }).trim().min(1, `${label} is required`).max(max, `${label} is too long (max ${max})`);
 
 // Missing, null or "" is saved as null.
-function optionalText(field, label, max = 255, at = body) {
-  return at(field)
-    .customSanitizer((value) => (isEmpty(value) ? null : value))
-    .custom((value) => value === null || typeof value === "string").withMessage(`${label} must be text`).bail()
-    .customSanitizer((value) => (value === null ? null : value.trim() || null))
-    .custom((value) => value === null || value.length <= max).withMessage(`${label} is too long (max ${max})`);
-}
+const optionalText = (label, max = 255) =>
+  z.preprocess(
+    emptyToNull,
+    z.string({ error: `${label} must be text` }).trim().max(max, `${label} is too long (max ${max})`).transform((value) => value || null).nullable()
+  );
 
-function requireEmail(field = "email", at = body) {
-  return requireText(field, "Email", 255, at).bail()
-    .customSanitizer((value) => value.toLowerCase())
-    .custom((value) => EMAIL_RE.test(value)).withMessage("Email is not valid");
-}
+const requireEmail = () => requireText("Email").toLowerCase().regex(EMAIL_RE, "Email is not valid");
 
-function requirePassword(field = "password") {
-  return body(field)
-    .custom((value) => typeof value === "string" && value.length >= 8).withMessage("Password must be at least 8 characters").bail()
+const requirePassword = () =>
+  z.string({ error: "Password must be at least 8 characters" })
+    .min(8, "Password must be at least 8 characters")
     // bcrypt only reads the first 72 bytes, and letters like "é" or "አ" take more than one byte.
-    .custom((value) => Buffer.byteLength(value, "utf8") <= 72).withMessage("Password is too long (max 72 bytes)");
-}
+    .refine((value) => Buffer.byteLength(value, "utf8") <= 72, "Password is too long (max 72 bytes)");
 
-function requireId(field, label, at = body) {
-  return at(field)
-    .custom((value) => Number.isInteger(Number(value)) && Number(value) >= 1).withMessage(`${label} is not valid`).bail()
-    .customSanitizer(Number);
-}
+const requireId = (label) =>
+  z.any().refine((value) => Number.isInteger(Number(value)) && Number(value) >= 1, `${label} is not valid`).transform(Number);
 
 // Yes/no fields are saved as 1 or 0. Left out on an add, they are 1.
-function flag(field, label) {
-  return body(field)
-    .customSanitizer((value) => (value === undefined ? 1 : value))
-    .custom((value) => [true, 1, "1", false, 0, "0"].includes(value)).withMessage(`${label} must be yes or no`).bail()
-    .customSanitizer((value) => (value === true || value === 1 || value === "1" ? 1 : 0));
-}
+const flag = (label) =>
+  z.preprocess(
+    (value) => (value === undefined ? 1 : value),
+    z.any()
+      .refine((value) => [true, 1, "1", false, 0, "0"].includes(value), `${label} must be yes or no`)
+      .transform((value) => (value === true || value === 1 || value === "1" ? 1 : 0))
+  );
 
 // Money is never rounded quietly: at most two decimals, or the field is refused. Saved as "12.50".
-function money(field, label, at = body) {
-  return at(field)
-    .custom((value) => {
+const money = (label) =>
+  z.any()
+    .refine((value) => {
       const n = Number(value);
       return !isEmpty(value) && Number.isFinite(n) && n >= 0 && n <= 99999999;
-    }).withMessage(`${label} must be a number of 0 or more`).bail()
-    .custom((value) => /^\d+(\.\d{1,2})?$/.test(String(value).trim())).withMessage(`${label} can have at most two decimals`).bail()
-    .customSanitizer((value) => Number(value).toFixed(2));
-}
+    }, `${label} must be a number of 0 or more`)
+    .refine((value) => /^\d+(\.\d{1,2})?$/.test(String(value).trim()), `${label} can have at most two decimals`)
+    .transform((value) => Number(value).toFixed(2));
 
 // Missing, null or "" is saved as null. `max` may be a function, for limits that move with the date.
-function optionalInt(field, label, min, max, at = body) {
+function optionalInt(label, min, max) {
   const top = () => (typeof max === "function" ? max() : max);
-  return at(field)
-    .customSanitizer((value) => (isEmpty(value) ? null : value))
-    .custom((value) => {
-      if (value === null) return true;
-      const n = Number(value);
-      return Number.isInteger(n) && n >= min && n <= top();
-    }).withMessage(() => `${label} must be a whole number from ${min} to ${top()}`).bail()
-    .customSanitizer((value) => (value === null ? null : Number(value)));
+  return z.preprocess(
+    emptyToNull,
+    z.any()
+      .refine((value) => value === null || (Number.isInteger(Number(value)) && Number(value) >= min && Number(value) <= top()), {
+        error: () => `${label} must be a whole number from ${min} to ${top()}`,
+      })
+      .transform((value) => (value === null ? null : Number(value)))
+  );
 }
 
-// NFR-16: edits send the updated_at they loaded.
-function requireUpdatedAt() {
-  return body("updated_at")
-    .custom((value) => !!value && !Number.isNaN(Date.parse(value))).withMessage("updated_at from the loaded record is required");
-}
+// URL ids, such as /api/customers/:id.
+const idParams = (label) => z.object({ id: requireId(label) });
 
-// PATCH: at least one editable field must be sent. The error names the first one.
-function somethingToChange(fields, message = `Nothing to change. Send at least one of: ${fields.join(", ")}`) {
-  return body(fields[0])
-    .custom((value, { req }) => fields.some((f) => req.body[f] !== undefined)).withMessage(message);
+// PATCH: a field left out keeps its saved value, so every field is optional, but at least one must be sent
+// (the error names the first one) and, for records, the updated_at that was loaded (NFR-16).
+// These two run after the field checks, even when a field is wrong.
+// `fields` lists the editable fields in the order the message names them (default: the shape's order).
+function editable(shape, { fields = Object.keys(shape), updatedAt = true, nothing } = {}) {
+  const message = nothing || `Nothing to change. Send at least one of: ${fields.join(", ")}`;
+  const object = z.object({ ...shape, ...(updatedAt ? { updated_at: z.any() } : {}) }).partial();
+  return object.superRefine(
+    (body, ctx) => {
+      if (!fields.some((f) => body[f] !== undefined)) ctx.addIssue({ code: "custom", path: [fields[0]], message });
+      if (updatedAt && !validDate(body.updated_at)) {
+        ctx.addIssue({ code: "custom", path: ["updated_at"], message: "updated_at from the loaded record is required" });
+      }
+    },
+    { when: () => true }
+  );
 }
-
-// PATCH rules: a field left out keeps its saved value, so its rule is skipped.
-const editable = (chains) => chains.map((chain) => chain.optional());
 
 export {
-  isEmpty, requireText, optionalText, requireEmail, requirePassword, requireId, flag, money, optionalInt,
-  requireUpdatedAt, somethingToChange, editable,
+  isEmpty, emptyToNull, requireText, optionalText, requireEmail, requirePassword, requireId, flag, money, optionalInt,
+  idParams, editable,
 };

@@ -1,9 +1,12 @@
-import { body, param } from "express-validator";
+import { z } from "zod";
 import * as r from "../../../shared/rules.js";
 
-const orderId = [r.requireId("id", "Order id", param)];
+const orderId = { params: r.idParams("Order id") };
 
 // BE-042: the body may be { "paid": true } (or empty). Nothing else: no partial payment or undo.
-const markPaid = [...orderId, body("paid").optional().custom((paid) => paid === true).withMessage("Only paid: true can be recorded")];
+const markPaid = {
+  params: r.idParams("Order id"),
+  body: z.object({ paid: z.literal(true, { error: "Only paid: true can be recorded" }).optional() }),
+};
 
 export { orderId, markPaid };
