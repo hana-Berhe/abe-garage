@@ -14,7 +14,7 @@
     "test:integration": "node --test --test-concurrency=1 tests/integration/*.test.js"
   },
   "engines": {
-    "node": ">=18"
+    "node": ">=20"
   },
   "dependencies": {
     "bcrypt": "^6.0.0",
