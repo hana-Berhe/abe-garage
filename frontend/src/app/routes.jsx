@@ -34,8 +34,8 @@ import OrderStatus from "../features/tracking/pages/OrderStatus";
 
 const { TECHNICIAN: T, ADMIN: A } = ROLES;
 
-// Each module adds only its own routes here.
-export default function App() {
+// Every page address in the app. Each module adds only its own routes here.
+export default function AppRoutes() {
   return (
     <Routes>
       <Route element={<PublicLayout />}>
