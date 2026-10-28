@@ -10,7 +10,7 @@ The product spec is **Abe Garage PRD v1.1**. Stack: React 18 + Vite, Express 4, 
 abe-garage/
 ├── backend/          Express REST API (ES modules): src/api/<feature>/{routes,controller,service,validations}, db, tests
 ├── frontend/         React + Vite app: src/features/<feature>, layouts, shared, styles
-├── docs/             one folder per topic: api/, architecture/, database/, postman/
+├── docs/             one folder per topic: setup/, testing/, api/, architecture/, database/, postman/
 └── package.json      npm workspaces: one install, scripts for both apps
 ```
 
@@ -18,26 +18,17 @@ See [docs/architecture](docs/architecture/README.md) for the full tree and the r
 
 ## Run it locally
 
-You need Node 20 (see `.nvmrc`; run `nvm use`) and MySQL 8.
+You need Node 20 (see `.nvmrc`) and MySQL 8. The full step-by-step guide, with Windows commands and a fix-it table, is in [docs/setup](docs/setup/README.md). In short:
 
 ```bash
-npm install                                   # installs both apps
-
-# Database and an app user
-mysql -u root -p -e "CREATE DATABASE abe_garage CHARACTER SET utf8mb4;
-  CREATE USER 'abe'@'localhost' IDENTIFIED BY 'change_me';
-  GRANT ALL ON abe_garage.* TO 'abe'@'localhost';"
-
-cp backend/.env.example backend/.env        # fill in DB_PASSWORD, JWT_SECRET, INSTALL_SECRET, INSTALL_ADMIN_*
+npm install
+cp backend/.env.example backend/.env        # fill in DB_PASSWORD, JWT_SECRET (32+ chars), INSTALL_SECRET, INSTALL_ADMIN_*
 cp frontend/.env.example frontend/.env
-
-npm run dev:api                               # http://localhost:8000
-curl -X POST -H "X-Setup-Key: <INSTALL_SECRET>" http://localhost:8000/api/install  # once: tables, roles, settings, first admin
-npm run seed                                  # optional: demo staff, customers, services and orders
-npm run dev:web                               # http://localhost:5173
+npm run dev:api
+curl -X POST -H "X-Setup-Key: <INSTALL_SECRET>" http://localhost:8000/api/install  # once
+npm run seed                                  # optional demo data
+npm run dev                                   # API on :8000, website on :5173
 ```
-
-Log in at http://localhost:5173/login with `INSTALL_ADMIN_EMAIL` and `INSTALL_ADMIN_PASSWORD` from `backend/.env`.
 
 ## Scripts
 
@@ -52,11 +43,7 @@ Log in at http://localhost:5173/login with `INSTALL_ADMIN_EMAIL` and `INSTALL_AD
 
 ## Tests
 
-- **Unit tests** (`npm test`) check money, time zones, PATCH merging and input rules. No database needed.
-- **Integration tests** (`npm run test:integration`) start the real API and call it over HTTP. They cover the full visit (customer → order → approval → jobs → invoice → cash → status page), every role on every address, revoked and expired logins, duplicates and bad input, roll-back, two people saving at once, invoices that never change, money rounding, mail failures, password reset, the shared error format, and 1000 orders against the 2-second target.
-  They need a MySQL user that may create and drop a database whose name ends in `_test`. Copy `backend/.env.test.example` to `backend/.env.test` and fill it in. **The test database is wiped on every run**, and a name that doesn't end in `_test` is refused.
-- **GitHub Actions** (`.github/workflows/test.yml`) runs both, plus the web build, on every pull request.
-- **Postman**: import `docs/postman/abe-garage.postman_collection.json` and `abe-garage.postman_environment.json`, set `baseUrl`, `adminEmail`, `adminPassword` and `setupKey`, then run the collection on a freshly installed database. See `docs/postman/README.md`.
+`npm test` (unit, no database), `npm run test:integration` (real API against a throw-away MySQL test database) and `npm run build`. CI runs all three on every pull request. Setup for the integration tests, how to run one file, and how to write a new test are in [docs/testing](docs/testing/README.md).
 
 ## Team rules
 
