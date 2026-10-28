@@ -1,6 +1,8 @@
 import test from "node:test";
 import assert from "node:assert";
 import { mergePatch } from "../../src/shared/patch.js";
+import { z } from "zod";
+import { editable } from "../../src/shared/rules.js";
 
 const saved = { first_name: "Sara", last_name: "Bekele", phone: "0911000058", active: 1 };
 const FIELDS = ["first_name", "last_name", "phone", "active"];
@@ -18,6 +20,13 @@ test("PATCH: fields outside the editable list are ignored", () => {
   assert.deepStrictEqual(mergePatch(saved, { active: 0, customer_id: 99, updated_at: "x" }, FIELDS), { ...saved, active: 0 });
 });
 
-test("PATCH: nothing editable sent is a 400", () => {
-  assert.throws(() => mergePatch(saved, { updated_at: "x" }, FIELDS), (e) => e.httpStatus === 400 && e.data.field === "first_name");
+test("PATCH: nothing editable sent is an error on the first editable field", () => {
+  const schema = editable(Object.fromEntries(FIELDS.map((f) => [f, z.any()])));
+  const fields = (body) => {
+    const result = schema.safeParse(body);
+    return result.success ? [] : result.error.issues.map((i) => i.path.join("."));
+  };
+  assert.deepStrictEqual(fields({ updated_at: "2026-01-01T00:00:00Z" }), ["first_name"]);
+  assert.deepStrictEqual(fields({ phone: "0912000000", updated_at: "2026-01-01T00:00:00Z" }), []);
+  assert.deepStrictEqual(fields({ phone: "0912000000" }), ["updated_at"]);
 });
