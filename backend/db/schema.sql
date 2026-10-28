@@ -1,4 +1,4 @@
--- Abe Garage schema: 9 tables, MySQL 8 (InnoDB, utf8mb4).
+-- Abe Garage schema: 13 tables, MySQL 8 (InnoDB, utf8mb4).
 -- Owned by Member 1. Safe to run twice (IF NOT EXISTS, INSERT IGNORE).
 -- Rows are deactivated, never deleted, so no foreign key cascades.
 -- updated_at keeps milliseconds so two quick saves never share a value (NFR-16).
@@ -107,41 +107,22 @@ CREATE TABLE IF NOT EXISTS orders (
   completed_at         DATETIME     NULL,
   notes_for_customer   TEXT         NULL,
   internal_notes       TEXT         NULL,
-  approved_by          INT UNSIGNED NULL,
-  approved_at          DATETIME     NULL,
-  approval_method      ENUM('in_person','phone') NULL,
   subtotal             DECIMAL(10,2) NOT NULL DEFAULT 0,
   vat_rate             DECIMAL(5,2)  NOT NULL,
   vat_amount           DECIMAL(10,2) NOT NULL DEFAULT 0,
   total                DECIMAL(10,2) NOT NULL DEFAULT 0,
-  paid                 TINYINT(1)    NOT NULL DEFAULT 0,
-  paid_at              DATETIME      NULL,
-  paid_received_by     INT UNSIGNED  NULL,
-  -- The issued invoice: number, time, who issued it and a frozen copy of what it shows (BE-040).
-  invoice_number       VARCHAR(20)   NULL,
-  invoice_issued_at    DATETIME      NULL,
-  invoice_issued_by    INT UNSIGNED  NULL,
-  invoice_snapshot     JSON          NULL,
   created_at           DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
   updated_at           DATETIME(3) NOT NULL DEFAULT CURRENT_TIMESTAMP(3) ON UPDATE CURRENT_TIMESTAMP(3),
   PRIMARY KEY (order_id),
   UNIQUE KEY uq_orders_hash (order_hash),
-  UNIQUE KEY uq_orders_invoice (invoice_number),
-  KEY ix_orders_status_paid (status, paid),
-  KEY ix_orders_paid_at (paid_at),
   KEY ix_orders_status_created (status, created_at),
   KEY ix_orders_customer (customer_id),
   KEY ix_orders_vehicle_owner (vehicle_id, customer_id),
   CONSTRAINT fk_orders_customer FOREIGN KEY (customer_id) REFERENCES customers (customer_id),
   CONSTRAINT fk_orders_vehicle_owner FOREIGN KEY (vehicle_id, customer_id) REFERENCES vehicles (vehicle_id, customer_id),
   CONSTRAINT fk_orders_created_by FOREIGN KEY (created_by) REFERENCES employees (employee_id),
-  CONSTRAINT fk_orders_approved_by FOREIGN KEY (approved_by) REFERENCES employees (employee_id),
-  CONSTRAINT fk_orders_paid_by FOREIGN KEY (paid_received_by) REFERENCES employees (employee_id),
-  CONSTRAINT fk_orders_invoice_by FOREIGN KEY (invoice_issued_by) REFERENCES employees (employee_id),
   CONSTRAINT ck_orders_status CHECK (status BETWEEN 1 AND 5),
-  CONSTRAINT ck_orders_money CHECK (subtotal >= 0 AND vat_amount >= 0 AND total >= 0 AND vat_rate >= 0),
-  CONSTRAINT ck_orders_paid CHECK (paid = 0 OR status = 4),
-  CONSTRAINT ck_orders_invoice CHECK (invoice_number IS NULL OR status = 4)
+  CONSTRAINT ck_orders_money CHECK (subtotal >= 0 AND vat_amount >= 0 AND total >= 0 AND vat_rate >= 0)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
 
 CREATE TABLE IF NOT EXISTS order_lines (
@@ -171,6 +152,68 @@ CREATE TABLE IF NOT EXISTS order_lines (
   CONSTRAINT ck_order_lines_price CHECK (line_price >= 0),
   -- A line is either a service from the list or an extra item with its own description.
   CONSTRAINT ck_order_lines_kind CHECK (service_id IS NOT NULL OR description IS NOT NULL)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
+
+-- FR-EST-02..06: every yes or no the customer gave, how they gave it, and the total they answered.
+-- An order can be approved more than once (extra work found during repair), so this is its own table.
+CREATE TABLE IF NOT EXISTS order_approvals (
+  approval_id     INT UNSIGNED NOT NULL AUTO_INCREMENT,
+  order_id        INT UNSIGNED NOT NULL,
+  recorded_by     INT UNSIGNED NOT NULL,
+  decision        ENUM('approved','declined') NOT NULL,
+  approval_method ENUM('in_person','phone')   NOT NULL,
+  order_total     DECIMAL(10,2) NOT NULL,
+  note            VARCHAR(255)  NULL,
+  decided_at      DATETIME      NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  PRIMARY KEY (approval_id),
+  KEY ix_order_approvals_order (order_id, decision, approval_id),
+  CONSTRAINT fk_order_approvals_order FOREIGN KEY (order_id) REFERENCES orders (order_id),
+  CONSTRAINT fk_order_approvals_by FOREIGN KEY (recorded_by) REFERENCES employees (employee_id),
+  CONSTRAINT ck_order_approvals_total CHECK (order_total >= 0)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
+
+-- BE-040: one invoice per completed order. It keeps the garage, customer and car details as they were when it
+-- was issued, so later edits never change it. Jobs, prices and totals are read from the order: they can't change
+-- once the order is completed, and an invoice is only issued for a completed order.
+CREATE TABLE IF NOT EXISTS invoices (
+  invoice_id          INT UNSIGNED NOT NULL AUTO_INCREMENT,
+  order_id            INT UNSIGNED NOT NULL,
+  invoice_number      VARCHAR(20)  NOT NULL,
+  issued_by           INT UNSIGNED NOT NULL,
+  issued_at           DATETIME     NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  garage_name         VARCHAR(100) NOT NULL,
+  garage_address      VARCHAR(255) NULL,
+  garage_phone        VARCHAR(30)  NULL,
+  garage_email        VARCHAR(255) NULL,
+  customer_first_name VARCHAR(100) NOT NULL,
+  customer_last_name  VARCHAR(100) NOT NULL,
+  customer_email      VARCHAR(255) NOT NULL,
+  customer_phone      VARCHAR(30)  NOT NULL,
+  vehicle_year        SMALLINT UNSIGNED NULL,
+  vehicle_make        VARCHAR(50)  NOT NULL,
+  vehicle_model       VARCHAR(50)  NOT NULL,
+  vehicle_type        VARCHAR(30)  NULL,
+  vehicle_mileage     INT UNSIGNED NULL,
+  vehicle_plate       VARCHAR(20)  NOT NULL,
+  vehicle_vin         VARCHAR(32)  NULL,
+  vehicle_color       VARCHAR(30)  NULL,
+  notes_for_customer  TEXT         NULL,
+  PRIMARY KEY (invoice_id),
+  UNIQUE KEY uq_invoices_order (order_id),
+  UNIQUE KEY uq_invoices_number (invoice_number),
+  CONSTRAINT fk_invoices_order FOREIGN KEY (order_id) REFERENCES orders (order_id),
+  CONSTRAINT fk_invoices_issued_by FOREIGN KEY (issued_by) REFERENCES employees (employee_id)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
+
+-- FR-INV-02, BE-042: the cash payment for an invoice, paid in full. An order is paid when this row exists.
+CREATE TABLE IF NOT EXISTS cash_payments (
+  invoice_id  INT UNSIGNED NOT NULL,
+  received_by INT UNSIGNED NOT NULL,
+  paid_at     DATETIME     NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  PRIMARY KEY (invoice_id),
+  KEY ix_cash_payments_paid_at (paid_at),
+  CONSTRAINT fk_cash_payments_invoice FOREIGN KEY (invoice_id) REFERENCES invoices (invoice_id),
+  CONSTRAINT fk_cash_payments_by FOREIGN KEY (received_by) REFERENCES employees (employee_id)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
 
 CREATE TABLE IF NOT EXISTS order_history (
