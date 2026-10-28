@@ -4,6 +4,7 @@ import { ApiError } from "../../../shared/respond.js";
 import { pageResult, likePattern } from "../../../shared/pagination.js";
 import { calculateTotals } from "../../../shared/money.js";
 import { ORDER_STATUS as S, LINE_STATUS as L } from "../../../shared/order-codes.js";
+import { PAID, PAYMENT_JOIN } from "../../../shared/payment-sql.js";
 import { ROLES } from "../../../middlewares/auth.js";
 import * as history from "./history.service.js";
 import * as serviceService from "../../services/service/service.service.js";
@@ -138,7 +139,7 @@ async function create(data, employeeId) {
 async function list({ page, search, limit, offset, status, paid, customerId, vehicleId }) {
   const where = [];
   const params = [];
-  const filters = [["o.status", status], ["o.paid", paid === null ? null : Number(paid)], ["o.customer_id", customerId], ["o.vehicle_id", vehicleId]];
+  const filters = [["o.status", status], [PAID, paid === null ? null : Number(paid)], ["o.customer_id", customerId], ["o.vehicle_id", vehicleId]];
   for (const [column, value] of filters) {
     if (value === null || value === undefined) continue;
     where.push(`${column} = ?`);
@@ -154,7 +155,7 @@ async function list({ page, search, limit, offset, status, paid, customerId, veh
 
   const [[{ total }]] = await pool.query(`SELECT COUNT(*) AS total ${from} ${whereSql}`, params);
   const [rows] = await pool.query(
-    `SELECT o.order_id, o.status, o.paid, o.total, o.created_at, o.estimated_ready_date, o.completed_at,
+    `SELECT o.order_id, o.status, ${PAID} AS paid, o.total, o.created_at, o.estimated_ready_date, o.completed_at,
        c.customer_id, c.first_name, c.last_name, v.vehicle_id, v.year, v.make, v.model, v.plate
      ${from} ${whereSql}
      ORDER BY o.created_at DESC, o.order_id DESC LIMIT ? OFFSET ?`,
@@ -177,19 +178,26 @@ async function getLines(conn, orderId) {
 }
 
 // FR-ORD-06: customer, car, lines, technicians and history. The garage block is for the printed estimate.
+// The latest approval, the invoice and the payment come from their own tables.
 async function getById(id) {
   const [rows] = await pool.query(
     `SELECT o.*, c.first_name, c.last_name, c.email, c.phone,
        v.year, v.make, v.model, v.type, v.color, v.mileage, v.plate, v.vin,
        CONCAT(cb.first_name, ' ', cb.last_name) AS created_by_name,
+       a.recorded_by AS approved_by, a.decided_at AS approved_at, a.approval_method,
        CONCAT(ab.first_name, ' ', ab.last_name) AS approved_by_name,
+       i.invoice_number, i.issued_at AS invoice_issued_at, i.issued_by AS invoice_issued_by,
+       cp.invoice_id IS NOT NULL AS paid, cp.paid_at, cp.received_by AS paid_received_by,
        CONCAT(pb.first_name, ' ', pb.last_name) AS paid_received_by_name
      FROM orders o
      JOIN customers c ON c.customer_id = o.customer_id
      JOIN vehicles v ON v.vehicle_id = o.vehicle_id
      JOIN employees cb ON cb.employee_id = o.created_by
-     LEFT JOIN employees ab ON ab.employee_id = o.approved_by
-     LEFT JOIN employees pb ON pb.employee_id = o.paid_received_by
+     LEFT JOIN order_approvals a ON a.approval_id =
+       (SELECT MAX(x.approval_id) FROM order_approvals x WHERE x.order_id = o.order_id AND x.decision = 'approved')
+     LEFT JOIN employees ab ON ab.employee_id = a.recorded_by
+     ${PAYMENT_JOIN}
+     LEFT JOIN employees pb ON pb.employee_id = cp.received_by
      WHERE o.order_id = ?`,
     [id]
   );
@@ -370,7 +378,7 @@ async function addLine(id, line, employeeId) {
   return getById(id);
 }
 
-// FR-EST-02, FR-EST-03, FR-EST-05, FR-EST-06. Each approval keeps its method and exact total in the history.
+// FR-EST-02, FR-EST-03, FR-EST-05, FR-EST-06. Each answer is a row in order_approvals with its method and exact total.
 async function recordApproval(id, { decision, method, note }, employeeId) {
   const completed = await withTransaction(async (conn) => {
     const order = await lockOrder(conn, id);
@@ -383,16 +391,19 @@ async function recordApproval(id, { decision, method, note }, employeeId) {
     );
     const started = Number(work.started || 0);
     const suffix = note ? ` · ${note}` : "";
+    await conn.query(
+      "INSERT INTO order_approvals (order_id, recorded_by, decision, approval_method, order_total, note, decided_at) VALUES (?, ?, ?, ?, ?, ?, UTC_TIMESTAMP())",
+      [id, employeeId, decision === "approve" ? "approved" : "declined", method, order.total, note || null]
+    );
     if (decision === "approve") {
       // BE-033: the status follows the jobs. If every job is already done (the refused extra work was removed),
       // the order completes now and the "car is ready" email goes out once.
       const allDone = work.total > 0 && Number(work.done) === work.total;
       const status = allDone ? S.COMPLETED : started > 0 ? S.IN_PROGRESS : S.APPROVED;
       await conn.query(
-        `UPDATE orders SET status = ?, approved_by = ?, approved_at = UTC_TIMESTAMP(), approval_method = ?,
-           completed_at = IF(? = ${S.COMPLETED}, UTC_TIMESTAMP(), completed_at)
+        `UPDATE orders SET status = ?, completed_at = IF(? = ${S.COMPLETED}, UTC_TIMESTAMP(), completed_at)
          WHERE order_id = ?`,
-        [status, employeeId, method, status, id]
+        [status, status, id]
       );
       await history.add(conn, id, employeeId, "approved", `${METHOD_LABEL[method]} · total ${order.total}${suffix}`);
       if (allDone) await history.add(conn, id, null, "completed", `All jobs done · total ${order.total}`);

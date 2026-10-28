@@ -19,15 +19,14 @@ async function listForOrder(conn, orderId) {
   return rows;
 }
 
-// FR-EST-06: the total the customer last said yes to, stored as "… · total 264.50".
+// FR-EST-06: the total the customer last said yes to.
 async function lastApprovedTotal(conn, orderId) {
   const [rows] = await conn.query(
-    `SELECT details FROM order_history WHERE order_id = ? AND action = 'approved'
-     ORDER BY created_at DESC, history_id DESC LIMIT 1`,
+    `SELECT order_total FROM order_approvals WHERE order_id = ? AND decision = 'approved'
+     ORDER BY approval_id DESC LIMIT 1`,
     [orderId]
   );
-  const match = rows[0] && /total (\d+\.\d{2})/.exec(rows[0].details || "");
-  return match ? match[1] : null;
+  return rows[0] ? rows[0].order_total : null;
 }
 
 export { add, listForOrder, lastApprovedTotal };

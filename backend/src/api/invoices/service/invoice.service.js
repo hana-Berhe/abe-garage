@@ -3,50 +3,64 @@ import { ApiError } from "../../../shared/respond.js";
 import { ORDER_STATUS as S } from "../../../shared/order-codes.js";
 import * as orderService from "../../orders/service/order.service.js";
 import * as history from "../../orders/service/history.service.js";
+import { PAYMENT_JOIN } from "../../../shared/payment-sql.js";
 
 // FR-INV-06: INV- plus the order id, padded to 6 digits.
 const invoiceNumber = (orderId) => `INV-${String(orderId).padStart(6, "0")}`;
 
-// What a printed invoice shows. Copied once when the invoice is issued and never rebuilt (BE-040),
-// so later changes to services, customers, cars or garage settings cannot change it.
-const ORDER_FIELDS = [
-  "order_id", "created_at", "completed_at", "notes_for_customer",
-  "first_name", "last_name", "email", "phone",
-  "year", "make", "model", "type", "color", "mileage", "plate", "vin",
-  "subtotal", "vat_rate", "vat_amount", "total",
-];
-
-function makeSnapshot(order, approvedTotal) {
-  const snapshot = Object.fromEntries(ORDER_FIELDS.map((f) => [f, order[f] ?? null]));
-  snapshot.garage = { name: order.garage.name, address: order.garage.address, phone: order.garage.phone, email: order.garage.email };
-  snapshot.lines = order.lines.map((l) => ({ line_id: l.line_id, name: l.name, line_price: l.line_price }));
-  snapshot.approved_total = approvedTotal;
-  return snapshot;
-}
-
-const readSnapshot = (value) => (typeof value === "string" ? JSON.parse(value) : value);
-
-// The stored invoice plus live payment details, which are not part of the frozen copy (BE-041).
+// The invoice: the details frozen when it was issued (BE-040), the order's jobs and money (fixed once the order is
+// completed), the total the customer approved, and the live payment (BE-041).
 async function getInvoice(orderId) {
   const [rows] = await pool.query(
-    `SELECT o.order_id, o.status, o.invoice_number, o.invoice_issued_at, o.invoice_snapshot,
-       o.paid, o.paid_at, CONCAT(pb.first_name, ' ', pb.last_name) AS paid_received_by_name,
-       CONCAT(ib.first_name, ' ', ib.last_name) AS invoice_issued_by_name
+    `SELECT o.order_id, o.status, o.created_at, o.completed_at, o.subtotal, o.vat_rate, o.vat_amount, o.total,
+       i.invoice_id, i.invoice_number, i.issued_at, i.garage_name, i.garage_address, i.garage_phone, i.garage_email,
+       i.customer_first_name, i.customer_last_name, i.customer_email, i.customer_phone,
+       i.vehicle_year, i.vehicle_make, i.vehicle_model, i.vehicle_type, i.vehicle_mileage, i.vehicle_plate,
+       i.vehicle_vin, i.vehicle_color, i.notes_for_customer,
+       CONCAT(ib.first_name, ' ', ib.last_name) AS invoice_issued_by_name,
+       cp.invoice_id IS NOT NULL AS paid, cp.paid_at, CONCAT(pb.first_name, ' ', pb.last_name) AS paid_received_by_name
      FROM orders o
-     LEFT JOIN employees pb ON pb.employee_id = o.paid_received_by
-     LEFT JOIN employees ib ON ib.employee_id = o.invoice_issued_by
+     ${PAYMENT_JOIN}
+     LEFT JOIN employees ib ON ib.employee_id = i.issued_by
+     LEFT JOIN employees pb ON pb.employee_id = cp.received_by
      WHERE o.order_id = ?`,
     [orderId]
   );
   const row = rows[0];
   if (!row) throw new ApiError(404, "Order not found");
-  if (!row.invoice_number) {
+  if (!row.invoice_id) {
     throw new ApiError(404, "The invoice has not been issued yet", { issued: false, can_issue: row.status === S.COMPLETED });
   }
+  const [lines] = await pool.query(
+    "SELECT line_id, service_name AS name, line_price FROM order_lines WHERE order_id = ? ORDER BY line_id",
+    [orderId]
+  );
   return {
-    ...readSnapshot(row.invoice_snapshot),
+    order_id: row.order_id,
+    created_at: row.created_at,
+    completed_at: row.completed_at,
+    notes_for_customer: row.notes_for_customer,
+    first_name: row.customer_first_name,
+    last_name: row.customer_last_name,
+    email: row.customer_email,
+    phone: row.customer_phone,
+    year: row.vehicle_year,
+    make: row.vehicle_make,
+    model: row.vehicle_model,
+    type: row.vehicle_type,
+    color: row.vehicle_color,
+    mileage: row.vehicle_mileage,
+    plate: row.vehicle_plate,
+    vin: row.vehicle_vin,
+    subtotal: row.subtotal,
+    vat_rate: row.vat_rate,
+    vat_amount: row.vat_amount,
+    total: row.total,
+    garage: { name: row.garage_name, address: row.garage_address, phone: row.garage_phone, email: row.garage_email },
+    lines,
+    approved_total: await history.lastApprovedTotal(pool, orderId),
     invoice_number: row.invoice_number,
-    invoice_issued_at: row.invoice_issued_at,
+    invoice_issued_at: row.issued_at,
     invoice_issued_by_name: row.invoice_issued_by_name,
     paid: row.paid,
     paid_at: row.paid_at,
@@ -54,12 +68,15 @@ async function getInvoice(orderId) {
   };
 }
 
+const findInvoice = async (conn, orderId) =>
+  (await conn.query("SELECT invoice_id, invoice_number FROM invoices WHERE order_id = ?", [orderId]))[0][0];
+
 // BE-040, FR-EST-06: only for completed orders whose total equals the last approved total.
 // Issuing twice returns the same invoice; `created` tells the controller whether this call issued it.
 async function issueInvoice(orderId, employeeId) {
   const created = await withTransaction(async (conn) => {
     const locked = await orderService.lockOrder(conn, orderId);
-    if (locked.invoice_number) return false;
+    if (await findInvoice(conn, orderId)) return false;
     if (locked.status !== S.COMPLETED) throw new ApiError(409, "The invoice can be issued once every job is done");
     const approved = await history.lastApprovedTotal(conn, orderId);
     if (approved !== locked.total) {
@@ -68,13 +85,20 @@ async function issueInvoice(orderId, employeeId) {
         `The order total ${locked.total} does not match the approved total ${approved ?? "(none)"}. Record the customer's approval of the new total first.`
       );
     }
-    // Jobs and prices cannot change while the order row is locked, since every order change locks it first.
-    const order = await orderService.getById(orderId);
+    // Copies the garage, customer and car details as they are now, so later edits never change this invoice.
     const number = invoiceNumber(orderId);
     await conn.query(
-      `UPDATE orders SET invoice_number = ?, invoice_issued_at = UTC_TIMESTAMP(), invoice_issued_by = ?, invoice_snapshot = ?
-       WHERE order_id = ?`,
-      [number, employeeId, JSON.stringify(makeSnapshot(order, approved)), orderId]
+      `INSERT INTO invoices (order_id, invoice_number, issued_by, issued_at, garage_name, garage_address, garage_phone,
+         garage_email, customer_first_name, customer_last_name, customer_email, customer_phone, vehicle_year, vehicle_make,
+         vehicle_model, vehicle_type, vehicle_mileage, vehicle_plate, vehicle_vin, vehicle_color, notes_for_customer)
+       SELECT o.order_id, ?, ?, UTC_TIMESTAMP(), g.name, g.address, g.phone, g.email, c.first_name, c.last_name, c.email,
+         c.phone, v.year, v.make, v.model, v.type, v.mileage, v.plate, v.vin, v.color, o.notes_for_customer
+       FROM orders o
+       JOIN customers c ON c.customer_id = o.customer_id
+       JOIN vehicles v ON v.vehicle_id = o.vehicle_id
+       JOIN garage_settings g ON g.settings_id = 1
+       WHERE o.order_id = ?`,
+      [number, employeeId, orderId]
     );
     await history.add(conn, orderId, employeeId, "invoice_issued", `${number} · total ${locked.total}`);
     return true;
@@ -82,19 +106,20 @@ async function issueInvoice(orderId, employeeId) {
   return { created, invoice: await getInvoice(orderId) };
 }
 
-// FR-INV-02, FR-INV-07: one guarded update, so two clicks or two tabs record one payment (AT-13).
-// BE-042: payment is recorded against an issued invoice.
+// FR-INV-02, FR-INV-07: the order row is locked first, so two clicks or two tabs record one payment (AT-13).
+// BE-042: payment is recorded against an issued invoice, which only exists for a completed order.
 async function markPaid(orderId, employeeId) {
   await withTransaction(async (conn) => {
     const order = await orderService.lockOrder(conn, orderId);
-    if (!order.invoice_number) throw new ApiError(409, "Issue the invoice before recording the payment");
-    const [result] = await conn.query(
-      `UPDATE orders SET paid = 1, paid_at = UTC_TIMESTAMP(), paid_received_by = ?
-       WHERE order_id = ? AND status = ? AND paid = 0`,
-      [employeeId, orderId, S.COMPLETED]
-    );
-    if (result.affectedRows === 0) throw new ApiError(409, "This order is already paid");
-    await history.add(conn, orderId, employeeId, "paid", `Cash ${order.total} · ${order.invoice_number}`);
+    const invoice = await findInvoice(conn, orderId);
+    if (!invoice) throw new ApiError(409, "Issue the invoice before recording the payment");
+    const [[paid]] = await conn.query("SELECT COUNT(*) AS n FROM cash_payments WHERE invoice_id = ?", [invoice.invoice_id]);
+    if (paid.n > 0) throw new ApiError(409, "This order is already paid");
+    await conn.query("INSERT INTO cash_payments (invoice_id, received_by, paid_at) VALUES (?, ?, UTC_TIMESTAMP())", [
+      invoice.invoice_id,
+      employeeId,
+    ]);
+    await history.add(conn, orderId, employeeId, "paid", `Cash ${order.total} · ${invoice.invoice_number}`);
   });
   return getInvoice(orderId);
 }

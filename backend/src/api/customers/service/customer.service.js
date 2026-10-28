@@ -1,4 +1,5 @@
 import { pool, withTransaction } from "../../../config/db.js";
+import { PAID } from "../../../shared/payment-sql.js";
 import { ApiError } from "../../../shared/respond.js";
 import { pageResult, likePattern } from "../../../shared/pagination.js";
 import { duplicateError } from "../../../shared/duplicate.js";
@@ -68,13 +69,13 @@ async function getProfile(id) {
   const customer = await getById(id);
   const vehicles = await vehicleService.listForCustomer(id);
   const [orders] = await pool.query(
-    `SELECT o.order_id, o.status, o.paid, o.total, o.created_at, o.completed_at, v.plate, v.make, v.model
+    `SELECT o.order_id, o.status, ${PAID} AS paid, o.total, o.created_at, o.completed_at, v.plate, v.make, v.model
      FROM orders o JOIN vehicles v ON v.vehicle_id = o.vehicle_id
      WHERE o.customer_id = ? ORDER BY o.created_at DESC, o.order_id DESC`,
     [id]
   );
   const [[owed]] = await pool.query(
-    "SELECT COALESCE(SUM(total), 0) AS unpaid_total FROM orders WHERE customer_id = ? AND status = 4 AND paid = 0",
+    `SELECT COALESCE(SUM(o.total), 0) AS unpaid_total FROM orders o WHERE o.customer_id = ? AND o.status = 4 AND NOT ${PAID}`,
     [id]
   );
   return { ...customer, vehicles, orders, unpaid_total: owed.unpaid_total };

@@ -1,4 +1,5 @@
 import { pool } from "../../../config/db.js";
+import { PAID } from "../../../shared/payment-sql.js";
 import { ApiError } from "../../../shared/respond.js";
 import { duplicateError } from "../../../shared/duplicate.js";
 import { pageResult } from "../../../shared/pagination.js";
@@ -57,7 +58,7 @@ async function getById(id) {
 async function getWithHistory(id) {
   const vehicle = await getById(id);
   const [orders] = await pool.query(
-    `SELECT o.order_id, o.status, o.paid, o.total, o.created_at, o.completed_at,
+    `SELECT o.order_id, o.status, ${PAID} AS paid, o.total, o.created_at, o.completed_at,
        GROUP_CONCAT(l.service_name ORDER BY l.line_id SEPARATOR ', ') AS jobs
      FROM orders o
      LEFT JOIN order_lines l ON l.order_id = o.order_id
@@ -82,7 +83,7 @@ async function listOrders(id, { page, limit, offset }) {
   const [[{ total }]] = await pool.query("SELECT COUNT(*) AS total FROM orders WHERE vehicle_id = ?", [id]);
   const [orders] = await pool.query(
     `SELECT o.order_id, o.customer_id, CONCAT(c.first_name, ' ', c.last_name) AS customer_name, o.vehicle_id,
-       o.status, o.paid, o.subtotal, o.vat_rate, o.vat_amount, o.total, o.created_at, o.estimated_ready_date, o.completed_at
+       o.status, ${PAID} AS paid, o.subtotal, o.vat_rate, o.vat_amount, o.total, o.created_at, o.estimated_ready_date, o.completed_at
      FROM orders o JOIN customers c ON c.customer_id = o.customer_id
      WHERE o.vehicle_id = ?
      ORDER BY o.created_at DESC, o.order_id DESC LIMIT ? OFFSET ?`,

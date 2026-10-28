@@ -8,23 +8,48 @@ import { periodStarts } from "../../src/shared/time.js";
 const f = useApp();
 const ORDERS = 1000;
 
+// Paid in cash at paidAt: an invoice from the order's own details plus its cash payment.
+async function payDirect(orderIds, paidAt) {
+  if (!orderIds.length) return;
+  await sql(
+    `INSERT INTO invoices (order_id, invoice_number, issued_by, issued_at, garage_name, customer_first_name, customer_last_name,
+       customer_email, customer_phone, vehicle_make, vehicle_model, vehicle_plate)
+     SELECT o.order_id, CONCAT('INV-', LPAD(o.order_id, 6, '0')), o.created_by, ?, g.name, c.first_name, c.last_name,
+       c.email, c.phone, v.make, v.model, v.plate
+     FROM orders o JOIN customers c ON c.customer_id = o.customer_id JOIN vehicles v ON v.vehicle_id = o.vehicle_id
+     JOIN garage_settings g ON g.settings_id = 1
+     WHERE o.order_id IN (?)`,
+    [paidAt, orderIds]
+  );
+  await sql(
+    `INSERT INTO cash_payments (invoice_id, received_by, paid_at)
+     SELECT invoice_id, issued_by, ? FROM invoices WHERE order_id IN (?)`,
+    [paidAt, orderIds]
+  );
+}
+
 async function seedOrders() {
   const cars = [];
   for (let i = 0; i < 20; i++) cars.push(await newCustomer(f.manager));
   const rows = [];
+  const paidRows = [];
   const old = new Date(Date.now() - 60 * 24 * 3600 * 1000);
   for (let i = 0; i < ORDERS; i++) {
     const { customer, vehicle } = cars[i % cars.length];
     const status = (i % 5) + 1;
     const paid = status === 4 && i % 2 === 0 ? 1 : 0;
-    rows.push([customer.customer_id, vehicle.vehicle_id, f.managerId, status, crypto.randomBytes(16).toString("hex"),
-      "50.00", "15.00", "7.50", "57.50", paid, paid ? old : null, status === 4 ? old : null]);
+    const hash = crypto.randomBytes(16).toString("hex");
+    if (paid) paidRows.push(hash);
+    rows.push([customer.customer_id, vehicle.vehicle_id, f.managerId, status, hash,
+      "50.00", "15.00", "7.50", "57.50", status === 4 ? old : null]);
   }
   await sql(
-    `INSERT INTO orders (customer_id, vehicle_id, created_by, status, order_hash, subtotal, vat_rate, vat_amount, total, paid, paid_at, completed_at)
+    `INSERT INTO orders (customer_id, vehicle_id, created_by, status, order_hash, subtotal, vat_rate, vat_amount, total, completed_at)
      VALUES ?`,
     [rows]
   );
+  const paidIds = (await sql("SELECT order_id FROM orders WHERE order_hash IN (?)", [paidRows])).map((r) => r.order_id);
+  await payDirect(paidIds, old);
 }
 
 const timed = async (fn) => {
@@ -65,12 +90,14 @@ test("dashboard 'today' starts at midnight in the garage's time zone", async () 
   const { today } = periodStarts();
   const before = (await api("GET", "/api/dashboard", f.manager)).data;
   const { customer, vehicle } = await newCustomer(f.manager);
-  const insert = (paidAt, total) =>
-    sql(
-      `INSERT INTO orders (customer_id, vehicle_id, created_by, status, order_hash, subtotal, vat_rate, vat_amount, total, paid, paid_at, completed_at)
-       VALUES (?, ?, ?, 4, ?, ?, '15.00', '0.00', ?, 1, ?, ?)`,
-      [customer.customer_id, vehicle.vehicle_id, f.managerId, crypto.randomBytes(16).toString("hex"), total, total, paidAt, paidAt]
+  const insert = async (paidAt, total) => {
+    const result = await sql(
+      `INSERT INTO orders (customer_id, vehicle_id, created_by, status, order_hash, subtotal, vat_rate, vat_amount, total, completed_at)
+       VALUES (?, ?, ?, 4, ?, ?, '15.00', '0.00', ?, ?)`,
+      [customer.customer_id, vehicle.vehicle_id, f.managerId, crypto.randomBytes(16).toString("hex"), total, total, paidAt]
     );
+    await payDirect([result.insertId], paidAt);
+  };
   await insert(new Date(today.getTime() + 60 * 1000), "100.00"); // one minute after local midnight: today
   await insert(new Date(today.getTime() - 60 * 1000), "7.00"); // one minute before: yesterday
   const after = (await api("GET", "/api/dashboard", f.manager)).data;

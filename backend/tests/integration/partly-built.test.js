@@ -181,19 +181,19 @@ test("a fresh install records every change file, and migrate applies a missing o
   const recorded = (await sql("SELECT version FROM schema_migrations ORDER BY version")).map((r) => r.version);
   assert.deepEqual(recorded, listMigrations());
 
-  // Pretend the database is older: no 008 and no indexes.
-  await sql("ALTER TABLE orders DROP INDEX ix_orders_paid_at, DROP INDEX ix_orders_status_created");
-  await sql("DELETE FROM schema_migrations WHERE version = '008_order_report_indexes'");
+  // Pretend the database is older: the call-back requests table is back and 004 was never run.
+  await sql("CREATE TABLE callback_requests (id INT PRIMARY KEY)");
+  await sql("DELETE FROM schema_migrations WHERE version = '004_drop_callback_requests'");
   const conn = await mysql.createConnection({
     host: process.env.DB_HOST, port: Number(process.env.DB_PORT) || 3306, user: process.env.DB_USER,
     password: process.env.DB_PASSWORD, database: process.env.DB_NAME, multipleStatements: true,
   });
   try {
-    assert.deepEqual(await migrate(conn), ["008_order_report_indexes"]);
+    assert.deepEqual(await migrate(conn), ["004_drop_callback_requests"]);
     assert.deepEqual(await migrate(conn), [], "a second run does nothing");
   } finally {
     await conn.end();
   }
-  const keys = (await sql("SHOW INDEX FROM orders")).map((k) => k.Key_name);
-  assert.ok(keys.includes("ix_orders_paid_at") && keys.includes("ix_orders_status_created"));
+  const tables = (await sql("SHOW TABLES LIKE 'callback_requests'"));
+  assert.equal(tables.length, 0);
 });
