@@ -10,9 +10,8 @@ const router = express.Router();
 
 const { TECHNICIAN: T, MANAGER: M, ADMIN: A } = ROLES;
 
-router.post("/api/services", verifyToken, hasRole([A]), allowFields(rules.SERVICE), validate(rules.createService), ah(controller.create));
-router.get("/api/services", verifyToken, hasRole([T, M, A]), ah(controller.list));
-router.patch("/api/services/:id", verifyToken, hasRole([A]), allowFields([...rules.SERVICE, "updated_at"]), validate(rules.updateService), ah(controller.update));
-router.get("/api/public/services", ah(controller.listPublic));
+router.post("/", verifyToken, hasRole([A]), allowFields(rules.SERVICE), validate(rules.createService), ah(controller.create));
+router.get("/", verifyToken, hasRole([T, M, A]), ah(controller.list));
+router.patch("/:id", verifyToken, hasRole([A]), allowFields([...rules.SERVICE, "updated_at"]), validate(rules.updateService), ah(controller.update));
 
 export default router;

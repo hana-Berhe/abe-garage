@@ -20,7 +20,7 @@ function errorHandler(err, req, res, next) {
   if (err.type === "entity.too.large") return send(res, 413, "The request is too large");
   if (err.code === "ER_DUP_ENTRY") return send(res, 409, "This record already exists");
   if (err.code === "ER_LOCK_DEADLOCK") return send(res, 409, "Someone else was saving the same thing. Please try again.");
-  console.error(err);
+  console.error(`[request ${req.id}]`, err);
   return send(res, 500, "Something went wrong on the server");
 }
 

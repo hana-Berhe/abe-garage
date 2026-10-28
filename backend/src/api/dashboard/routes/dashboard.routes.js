@@ -5,6 +5,6 @@ import * as controller from "../controller/dashboard.controller.js";
 
 const router = express.Router();
 
-router.get("/api/dashboard", verifyToken, hasRole([ROLES.MANAGER, ROLES.ADMIN]), ah(controller.get));
+router.get("/", verifyToken, hasRole([ROLES.MANAGER, ROLES.ADMIN]), ah(controller.get));
 
 export default router;

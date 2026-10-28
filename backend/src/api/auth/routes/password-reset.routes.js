@@ -9,7 +9,7 @@ import * as controller from "../controller/password-reset.controller.js";
 const router = express.Router();
 
 // BE-005, BE-006. Public: the person can't log in yet.
-router.post("/api/auth/forgot-password", forgotLimits, allowFields(["email"]), validate(rules.forgotPassword), ah(controller.forgot));
-router.post("/api/auth/reset-password", resetLimits, allowFields(["token", "new_password"]), validate(rules.resetPassword), ah(controller.reset));
+router.post("/forgot-password", forgotLimits, allowFields(["email"]), validate(rules.forgotPassword), ah(controller.forgot));
+router.post("/reset-password", resetLimits, allowFields(["token", "new_password"]), validate(rules.resetPassword), ah(controller.reset));
 
 export default router;

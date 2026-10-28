@@ -13,6 +13,6 @@ function privateAnswer(req, res, next) {
 }
 
 // No token: the 32-character code in the link is the key (FR-TRK-01).
-router.get("/api/public/orders/:hash", privateAnswer, statusLimits, ah(controller.orderStatus));
+router.get("/orders/:hash", privateAnswer, statusLimits, ah(controller.orderStatus));
 
 export default router;

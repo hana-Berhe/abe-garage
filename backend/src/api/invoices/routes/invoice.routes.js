@@ -14,9 +14,9 @@ const ORDER_ID = validate(rules.orderId);
 
 const { MANAGER: M, ADMIN: A } = ROLES;
 
-router.post("/api/orders/:id/invoice", verifyToken, hasRole([M, A]), NO_BODY, ORDER_ID, ah(controller.issue));
-router.get("/api/orders/:id/invoice", verifyToken, hasRole([M, A]), ORDER_ID, ah(controller.getInvoice));
-router.patch("/api/orders/:id/payment", verifyToken, hasRole([M, A]), allowFields(["paid"]), validate(rules.markPaid), ah(controller.markPaid));
-router.post("/api/orders/:id/resend-email", verifyToken, hasRole([M, A]), resendLimits, NO_BODY, ORDER_ID, ah(controller.resendEmail));
+router.post("/:id/invoice", verifyToken, hasRole([M, A]), NO_BODY, ORDER_ID, ah(controller.issue));
+router.get("/:id/invoice", verifyToken, hasRole([M, A]), ORDER_ID, ah(controller.getInvoice));
+router.patch("/:id/payment", verifyToken, hasRole([M, A]), allowFields(["paid"]), validate(rules.markPaid), ah(controller.markPaid));
+router.post("/:id/resend-email", verifyToken, hasRole([M, A]), resendLimits, NO_BODY, ORDER_ID, ah(controller.resendEmail));
 
 export default router;

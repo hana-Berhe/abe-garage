@@ -23,6 +23,21 @@ test("an unknown address gets 404", async () => {
   shape(r);
 });
 
+test("every answer carries its own request ID", async () => {
+  const a = await api("GET", "/api/does-not-exist");
+  const b = await api("GET", "/api/public/services");
+  const id = /^[0-9a-f-]{36}$/;
+  assert.match(a.headers.get("x-request-id"), id);
+  assert.match(b.headers.get("x-request-id"), id);
+  assert.notEqual(a.headers.get("x-request-id"), b.headers.get("x-request-id"));
+});
+
+test("/api is only mounted once", async () => {
+  const r = await api("GET", "/api/api/public/services");
+  assert.equal(r.code, 404);
+  shape(r);
+});
+
 test("a database error gets 500 without leaking details", async () => {
   const original = ctx.pool.query.bind(ctx.pool);
   ctx.pool.query = async (q, ...rest) => {
