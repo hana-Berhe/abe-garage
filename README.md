@@ -10,15 +10,15 @@ The product spec is **Abe Garage PRD v1.1**. Stack: React 18 + Vite, Express 4, 
 abe-garage/
 ├── backend/          Express REST API (ES modules): src/api/<feature>/{routes,controller,service,validations}, db, tests
 ├── frontend/         React + Vite app: src/features/<feature>, layouts, shared, styles
-├── docs/             architecture, API list, database guide
+├── docs/             one folder per topic: api/, architecture/, database/, postman/
 └── package.json      npm workspaces: one install, scripts for both apps
 ```
 
-See [docs/architecture.md](docs/architecture.md) for the full tree and the rules every module follows.
+See [docs/architecture](docs/architecture/README.md) for the full tree and the rules every module follows.
 
 ## Run it locally
 
-You need Node 18+ and MySQL 8.
+You need Node 20 (see `.nvmrc`; run `nvm use`) and MySQL 8.
 
 ```bash
 npm install                                   # installs both apps
@@ -44,7 +44,7 @@ Log in at http://localhost:5173/login with `INSTALL_ADMIN_EMAIL` and `INSTALL_AD
 | Command | Does |
 | --- | --- |
 | `npm run dev:api` / `npm run dev:web` | start one app in watch mode |
-| `npm run dev` | start both |
+| `npm run dev` | start both in one terminal (Ctrl+C stops both) |
 | `npm run seed` | load demo data |
 | `npm test` | API unit tests (no database needed) |
 | `npm run test:integration` | API integration tests against a throw-away MySQL test database (see below) |

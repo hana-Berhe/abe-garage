@@ -1,25 +1,19 @@
 import * as employeeService from "../service/employee.service.js";
-import { ok, created, badField } from "../../../shared/respond.js";
+import { ok, created } from "../../../shared/respond.js";
 import { readPage } from "../../../shared/pagination.js";
 import { ROLES } from "../../../middlewares/auth.js";
-import * as v from "../../../shared/validate.js";
 import { mergePatch } from "../../../shared/patch.js";
-import { readEmployee } from "../validations/employee.validation.js";
+import { PERSON } from "../validations/employee.validation.js";
 
-// BE-012: no password here. The route refuses one and points to Forgot password.
-const EDITABLE = ["email", "first_name", "last_name", "phone", "role_id", "active"];
+// The routes check every field first (validations/employee.validation.js).
 
 async function login(req, res) {
-  const email = v.requireEmail(req.body);
-  const password = v.requireText(req.body, "password", "Password", 72);
-  const data = await employeeService.login(email, password);
+  const data = await employeeService.login(req.body.email, req.body.password);
   return ok(res, "Logged in", data);
 }
 
 async function changePassword(req, res) {
-  const oldPassword = v.requireText(req.body, "old_password", "Current password", 72);
-  const newPassword = v.requirePassword(req.body, "new_password");
-  await employeeService.changePassword(req.employee.id, oldPassword, newPassword);
+  await employeeService.changePassword(req.employee.id, req.body.old_password, req.body.new_password);
   return ok(res, "Password changed. Please log in again.");
 }
 
@@ -28,7 +22,7 @@ async function profile(req, res) {
 }
 
 async function create(req, res) {
-  const data = readEmployee(req.body, { passwordRequired: true });
+  const data = { ...Object.fromEntries(PERSON.map((name) => [name, req.body[name]])), password: req.body.password };
   const employee = await employeeService.create(data);
   return created(res, "Employee added", employee);
 }
@@ -47,17 +41,12 @@ async function list(req, res) {
 }
 
 async function getOne(req, res) {
-  const id = v.requireId(req.params.id, "id", "Employee id");
-  return ok(res, "Employee", await employeeService.getById(id));
+  return ok(res, "Employee", await employeeService.getById(req.params.id));
 }
 
 async function update(req, res) {
-  const id = v.requireId(req.params.id, "id", "Employee id");
-  const current = await employeeService.getById(id);
-  const data = readEmployee(mergePatch(current, req.body, EDITABLE), { passwordRequired: false });
-  if (!req.body.updated_at || Number.isNaN(Date.parse(req.body.updated_at))) {
-    throw badField("updated_at", "updated_at from the loaded record is required");
-  }
+  const id = req.params.id;
+  const data = mergePatch(await employeeService.getById(id), req.body, PERSON);
   data.updated_at = req.body.updated_at;
   const employee = await employeeService.update(id, data, req.employee.id);
   return ok(res, "Employee saved", employee);

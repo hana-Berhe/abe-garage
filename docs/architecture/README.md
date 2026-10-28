@@ -14,22 +14,23 @@ The backend uses ES modules (`import` / `export`, `"type": "module"` in `backend
 ```
 backend/
 ├── src/
-│   ├── app.js                 Express app: CORS, JSON, routes, error handler
-│   ├── server.js              reads .env and starts the server
-│   ├── routes.js              mounts every feature's router
+│   ├── app.js                 Express app: request ID, CORS, JSON, /api, error handler
+│   ├── server.js              checks .env, starts the server, shuts down cleanly
+│   ├── routes.js              every URL prefix in one list (/customers, /orders, ...)
 │   ├── config/
 │   │   ├── env.js             loads backend/.env (imported first)
 │   │   └── db.js              MySQL pool and withTransaction()
 │   ├── middlewares/
 │   │   ├── auth.js            verifyToken, hasRole([...]), ROLES
+│   │   ├── validate.js        checks a route's Zod schemas, answers 400 with { errors }
 │   │   └── error-handler.js   every error becomes { status, message, data }
 │   ├── api/                   one folder per feature
 │   │   └── <feature>/
-│   │       ├── routes/<name>.routes.js            URL + middleware only
+│   │       ├── routes/<name>.routes.js            path after the prefix + middleware only
 │   │       ├── controller/<name>.controller.js    reads the request, calls the service, answers
-│   │       ├── validations/<name>.validation.js   checks input, 400 with the field name
+│   │       ├── validations/<name>.validation.js   Zod schemas for each route's input
 │   │       └── service/<name>.service.js          business rules and SQL (? placeholders only)
-│   └── shared/                money, mailer, pagination, responses, validation helpers
+│   └── shared/                money, mailer, pagination, responses, rules.js (shared Zod field schemas)
 ├── db/
 │   ├── schema.sql             the 10 tables (only Member 1 changes it)
 │   ├── migrations/            numbered change files, applied by `npm run migrate`
@@ -43,12 +44,15 @@ Features: `health`, `install`, `employees`, `settings`, `customers`, `vehicles`,
 
 A feature uses another feature through its service, never by writing to that feature's tables.
 
+URLs: `/api` appears once, in `app.js`. Each feature prefix appears once, in `routes.js`. A route file only writes the part after its prefix, such as `"/"` or `"/:id/vehicles"`. When a feature answers under a second prefix, it gets a second route file named after that prefix, for example `orders/routes/order-line.routes.js` (mounted at `/order-lines`) and `vehicles/routes/customer-vehicle.routes.js` (mounted at `/customers`).
+
 ## Web (`frontend`)
 
 ```
 frontend/src/
-├── main.jsx                   providers and router
-├── app/App.jsx                every route, with PrivateAuthRoute and roles
+├── main.jsx                   mounts <App /> and global CSS
+├── app/App.jsx                router and login session around every page
+├── app/routes.jsx             every page address, with PrivateAuthRoute and roles
 ├── layouts/                   public site shell, staff shell, role-aware menu
 ├── features/                  one folder per feature
 │   └── <feature>/
@@ -71,7 +75,7 @@ Pages never call `fetch` and never hold business rules. Money shown before savin
 | --- | --- |
 | Login | bcrypt check (also for unknown emails, so both take as long), then a JWT valid 1 hour holding id, role, name and token version |
 | Roles | `hasRole([...])` on every staff route; the server check is the real one |
-| Input | checked in the feature's validation file; 400 with `{ field }` so the form shows it under the right input |
+| Input | Zod schemas in the feature's validation file, run by `validate({ params, body, query })` in the route; 400 `Validation failed` with `{ errors: { field: message } }`, so the form shows the first one under the right input |
 | Answers | `{ status, message, data }` with the right HTTP code |
 | Multi-table saves | one transaction (`withTransaction`) |
 | Money | `shared/money.js` only; DECIMAL(10,2); VAT added on top of the subtotal |

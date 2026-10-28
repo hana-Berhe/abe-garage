@@ -8,7 +8,7 @@ const TIMEOUT_MS = 2000;
 
 // BE-048: ready only when the database answers within 2 seconds and setup has run (the settings row exists).
 // Otherwise 503 with nothing about the database in the answer.
-router.get("/api/health", async (req, res) => {
+router.get("/", async (req, res) => {
   let timer;
   try {
     const check = pool.query("SELECT 1 FROM garage_settings WHERE settings_id = 1");

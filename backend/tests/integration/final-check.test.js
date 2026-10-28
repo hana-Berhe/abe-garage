@@ -32,7 +32,7 @@ test("prices with more than two decimals are refused, not rounded (BE-025)", asy
     customer_id: customer.customer_id, vehicle_id: vehicle.vehicle_id, lines: [{ description: "Bulb", price: "3.999" }],
   });
   assert.equal(o.code, 400);
-  assert.equal(errorField(o), "price");
+  assert.equal(errorField(o), "lines.0.price");
 });
 
 test("a body over 256 KB gets 413, not a server error (BE-001)", async () => {

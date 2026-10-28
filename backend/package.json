@@ -14,7 +14,7 @@
     "test:integration": "node --test --test-concurrency=1 tests/integration/*.test.js"
   },
   "engines": {
-    "node": ">=18"
+    "node": ">=20"
   },
   "dependencies": {
     "bcrypt": "^6.0.0",
@@ -25,6 +25,7 @@
     "helmet": "8.1.0",
     "jsonwebtoken": "^9.0.3",
     "mysql2": "^3.24.6",
-    "nodemailer": "^10.2.1"
+    "nodemailer": "^10.2.1",
+    "zod": "^4.6.7"
   }
 }

@@ -1,11 +1,6 @@
-import { badField } from "./respond.js";
-
-// PATCH edits: fields left out keep their saved value, so the existing validators see a whole record.
-// At least one editable field must be sent.
+// PATCH edits: fields left out keep their saved value, so the service always gets a whole record.
+// The route's rules have already checked the fields that were sent, and that at least one was (somethingToChange).
 function mergePatch(current, body, fields) {
-  if (!fields.some((f) => body[f] !== undefined)) {
-    throw badField(fields[0], `Nothing to change. Send at least one of: ${fields.join(", ")}`);
-  }
   return Object.fromEntries(fields.map((f) => [f, body[f] !== undefined ? body[f] : current[f]]));
 }
 

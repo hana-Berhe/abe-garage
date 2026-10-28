@@ -1,13 +1,25 @@
-import * as v from "../../../shared/validate.js";
+import { z } from "zod";
+import * as r from "../../../shared/rules.js";
+import { carSchema } from "../../vehicles/validations/vehicle.validation.js";
 
-function readCustomer(body) {
-  return {
-    first_name: v.requireText(body, "first_name", "First name", 100),
-    last_name: v.requireText(body, "last_name", "Last name", 100),
-    email: v.requireEmail(body),
-    phone: v.requireText(body, "phone", "Phone", 30),
-    active: body.active === undefined ? 1 : v.toFlag(body.active, "active", "Active"),
-  };
-}
+const CUSTOMER = ["first_name", "last_name", "email", "phone", "active"];
 
-export { readCustomer };
+const customerShape = () => ({
+  first_name: r.requireText("First name", 100),
+  last_name: r.requireText("Last name", 100),
+  email: r.requireEmail(),
+  phone: r.requireText("Phone", 30),
+  active: r.flag("Active"),
+});
+
+// The first car may come with the new customer, as { vehicle: { ... } }. Its errors are named "vehicle.plate" and so on.
+const firstCar = z.preprocess(
+  (value) => (!value ? undefined : typeof value === "object" && !Array.isArray(value) ? value : {}),
+  carSchema.optional()
+);
+
+const createCustomer = { body: z.object({ ...customerShape(), vehicle: firstCar }) };
+const customerId = { params: r.idParams("Customer id") };
+const updateCustomer = { params: r.idParams("Customer id"), body: r.editable(customerShape()) };
+
+export { CUSTOMER, createCustomer, customerId, updateCustomer };

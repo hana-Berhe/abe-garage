@@ -1,6 +1,6 @@
 # Database
 
-MySQL 8, InnoDB, utf8mb4. The whole schema is in [`backend/db/schema.sql`](../backend/db/schema.sql) and is safe to run twice.
+MySQL 8, InnoDB, utf8mb4. The whole schema is in [`backend/db/schema.sql`](../../backend/db/schema.sql) and is safe to run twice.
 
 ## Tables
 
