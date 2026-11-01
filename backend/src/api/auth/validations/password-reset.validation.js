@@ -1,7 +1,7 @@
-import { z } from "zod";
+import { body } from "express-validator";
 import * as r from "../../../shared/rules.js";
 
-const forgotPassword = { body: z.object({ email: r.requireEmail() }) };
-const resetPassword = { body: z.object({ token: r.requireText("Reset link", 64), new_password: r.requirePassword() }) };
+const forgotPassword = [r.requireEmail(body("email"))];
+const resetPassword = [r.requireText(body("token"), "Reset link", 64), r.requirePassword(body("new_password"))];
 
 export { forgotPassword, resetPassword };

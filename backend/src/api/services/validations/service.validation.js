@@ -1,22 +1,20 @@
-import { z } from "zod";
+import { body } from "express-validator";
 import * as r from "../../../shared/rules.js";
 
 const SERVICE = ["name", "description", "price", "labor_hours", "active"];
 
-const serviceShape = () => ({
-  labor_hours: z.preprocess(
-    (value) => (r.isEmpty(value) ? 0 : Number(value)),
-    z.any()
-      .refine((hours) => Number.isFinite(hours) && hours >= 0 && hours <= 99, "Hours must be a number from 0 to 99")
-      .transform((hours) => hours.toFixed(2))
-  ),
-  name: r.requireText("Service name", 100),
-  description: r.optionalText("Description", 2000),
-  price: r.money("Price"),
-  active: r.flag("Active"),
-});
+const serviceShape = () => [
+  body("labor_hours")
+    .customSanitizer((value) => (r.isEmpty(value) ? 0 : Number(value)))
+    .custom((hours) => Number.isFinite(hours) && hours >= 0 && hours <= 99).withMessage("Hours must be a number from 0 to 99")
+    .customSanitizer((hours) => hours.toFixed(2)),
+  r.requireText(body("name"), "Service name", 100),
+  r.optionalText(body("description"), "Description", 2000),
+  r.money(body("price"), "Price"),
+  r.flag(body("active"), "Active"),
+];
 
-const createService = { body: z.object(serviceShape()) };
-const updateService = { params: r.idParams("Service id"), body: r.editable(serviceShape(), { fields: SERVICE }) };
+const createService = serviceShape();
+const updateService = [r.idParams("Service id"), ...r.editable(serviceShape(), { fields: SERVICE })];
 
 export { SERVICE, createService, updateService };
