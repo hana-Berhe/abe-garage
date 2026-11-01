@@ -1,25 +1,26 @@
-import { z } from "zod";
+import { body } from "express-validator";
 import * as r from "../../../shared/rules.js";
-import { carSchema } from "../../vehicles/validations/vehicle.validation.js";
+import { carRules } from "../../vehicles/validations/vehicle.validation.js";
 
 const CUSTOMER = ["first_name", "last_name", "email", "phone", "active"];
 
-const customerShape = () => ({
-  first_name: r.requireText("First name", 100),
-  last_name: r.requireText("Last name", 100),
-  email: r.requireEmail(),
-  phone: r.requireText("Phone", 30),
-  active: r.flag("Active"),
-});
+const customerShape = () => [
+  r.requireText(body("first_name"), "First name", 100),
+  r.requireText(body("last_name"), "Last name", 100),
+  r.requireEmail(body("email")),
+  r.requireText(body("phone"), "Phone", 30),
+  r.flag(body("active"), "Active"),
+];
 
 // The first car may come with the new customer, as { vehicle: { ... } }. Its errors are named "vehicle.plate" and so on.
-const firstCar = z.preprocess(
-  (value) => (!value ? undefined : typeof value === "object" && !Array.isArray(value) ? value : {}),
-  carSchema.optional()
-);
+// Nothing (or null, "" or false) means no car; anything else that isn't an object is checked as an empty car.
+const firstCar = [
+  body("vehicle").customSanitizer((value) => (!value ? undefined : r.isObject(value) ? value : {})),
+  ...carRules({ prefix: "vehicle.", when: (value, { req }) => req.body.vehicle !== undefined }),
+];
 
-const createCustomer = { body: z.object({ ...customerShape(), vehicle: firstCar }) };
-const customerId = { params: r.idParams("Customer id") };
-const updateCustomer = { params: r.idParams("Customer id"), body: r.editable(customerShape()) };
+const createCustomer = [...customerShape(), ...firstCar];
+const customerId = [r.idParams("Customer id")];
+const updateCustomer = [r.idParams("Customer id"), ...r.editable(customerShape())];
 
 export { CUSTOMER, createCustomer, customerId, updateCustomer };
